@@ -14,7 +14,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
 
-    <title>Contact Us | Champion-FX.com</title>
+    <title>Cashier | Champion-FX.com</title>
     <meta name="description" content="ChampionFX Static" />
     <link rel="icon" type="image/png" sizes="16x16" href="/beta/images/favicons/CFX_favicon16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/beta/images/favicons/CFX_favicon32.png" />
@@ -159,51 +159,43 @@
     <main class="page-content" aria-label="Content" id="champion-container">
         <div class="wrapper" id="champion-content">
             <div class="fx-section">
-    <div class="container">
+    <div id="cashier_deposit" class="container">
         <div class="row">
-            <div class="col-md-2">
-                <div class="fx-md fx-customer-service"></div>
+            <div class="col-sm">
+                <h1 id="cashier_title" style="text-transform: capitalize"></h1>
             </div>
-            <div class="col-md-5">
-                <h2 class="contacts-title">Contact Us</h2>
-                <div class="row contact-phone">
+        </div>
+
+        <div class="row">
+            <div id="error_msg" class="col-xs-12 notice-msg center-text hidden"></div>
+        </div>
+
+        <div id="form_withdraw" class="hidden">
+            <fieldset>
+                <div class="row form-row">
                     <div class="col-xs-4">
-                        Telephone:
+                        <label for="verification-token">Verification token</label>
                     </div>
                     <div class="col-xs-8">
-                        <select id="cs_telephone_number">
-                            <option disabled="">Select Country</option>
-                            <option value="+61 (02) 8294 5448,<br>1800 093570 (Toll Free)">Australia</option>
-                            <option value="+1 (450) 823 1002">Canada</option>
-                            <option value="+49 0221 98259000">Germany</option>
-                            <option value="0018030113641 (Toll Free)">Indonesia</option>
-                            <option value="+353 (0) 76 888 7500,<br>1800931084 (Toll Free)">Ireland</option>
-                            <option value="+48 58 881 00 02">Poland</option>
-                            <option value="8 10 8002 8553011 (Toll Free)">Russia</option>
-                            <option value="+44 (0) 1666 800042,<br>0800 011 9847 (Toll Free)" selected>United Kingdom
-                            </option>
-                        </select>
-                        <div id="phone-result">+44 (0) 1666 800042,<br>0800 011 9847 (Toll Free)</div>
+                        <input id="verification_token" type="text" maxlength="48" autocomplete="off" />
+                        <div class="hint">Please check your email for the value of this token</div>
+                        <p class="hint" id="verification_error"></p>
+                    </div>
+                    <div class="col-xs-12 center-text">
+                        <span class="button">
+                            <button class="button" id="btn_submit" type="button">Submit</button>
+                        </span>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-xs phone-note">
-                        <p><em>All calls are recorded for training and monitoring purposes</em></p>
-                    </div>
-                </div>
+            </fieldset>
+        </div>
+
+        <div class="row">
+            <div id="deposit_iframe_container" class="hidden">
+                <iframe src="" frameborder="0" width="100%" height="1500" scrolling="auto" style="padding:0;margin:0;"></iframe>
             </div>
-            <div class="col-md-5">
-                <h2 class="contacts-title">Email</h2>
-                <h4>General</h4>
-                <a href="mailto:support@champion-fx.com" rel="nofollow">support@champion-fx.com</a>
-                <h4>Backoffice</h4>
-                <a href="mailto:backoffice@champion-fx.com" rel="nofollow">backoffice@champion-fx.com</a>
-                <h4>New account</h4>
-                <a href="mailto:newaccount@champion-fx.com" rel="nofollow">newaccount@champion-fx.com</a>
-                <h4>Disputes and complaints</h4>
-                <a href="mailto:complaints@champion-fx.com" rel="nofollow">complaints@champion-fx.com</a>
-                <h4>Trading</h4>
-                <a href="mailto:trading@champion-fx.com" rel="nofollow">trading@champion-fx.com</a>
+            <div id="withdraw_iframe_container" class="hidden">
+                <iframe src="" frameborder="0" width="100%" height="1500" scrolling="auto" style="padding:0;margin:0;"></iframe>
             </div>
         </div>
     </div>
