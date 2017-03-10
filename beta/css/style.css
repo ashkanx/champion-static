@@ -112,8 +112,11 @@ button {
   margin: 0;
 }
 
-.signup-button {
-  text-align: right;
+#main-signup {
+  margin-left: auto;
+}
+#main-signup .signup-button {
+  margin: auto;
 }
 
 .license-box {
@@ -576,14 +579,6 @@ fieldset {
   margin: 0;
 }
 
-.binary-logo-text {
-  padding: 0;
-}
-.binary-logo-text div {
-  width: 150px !important;
-  margin-top: 8px;
-}
-
 .test {
   background-color: #013365;
 }
@@ -961,10 +956,6 @@ body .top-nav-menu li a {
 }
 
 .logo > div {
-  height: 45px;
-}
-
-.binary-logo-text > div {
   height: 45px;
 }
 
