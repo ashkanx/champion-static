@@ -23680,7 +23680,7 @@
 	            }
 	            ChampionSocket.send(data).then(function (response) {
 	                if (response.error) {
-	                    $('#error-create-account').removeClass('hidden').text(response.error.message);
+	                    $('#msg_form').removeClass('hidden').text(response.error.message);
 	                    btn_submit.removeAttr('disabled');
 	                } else {
 	                    var acc_info = response.new_account_real;
@@ -39934,7 +39934,7 @@
 	
 	    var displayLoadingAccount = function displayLoadingAccount(acc_type) {
 	        var $acc_item = $list.find('#' + acc_type);
-	        $acc_item.find('> div > div[class!="title"]').addClass(hidden_class);
+	        $acc_item.find('> div > div:not(.title, .separator)').addClass(hidden_class);
 	        $acc_item.find('.loading').removeClass(hidden_class);
 	    };
 	
