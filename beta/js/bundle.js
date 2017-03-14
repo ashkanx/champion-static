@@ -36567,10 +36567,11 @@
 	var ChangePassword = function () {
 	    'use strict';
 	
-	    var form_selector = '#frm_change_password';
-	
 	    var $form = void 0,
 	        btn_submit = void 0;
+	
+	    var form_selector = '#frm_change_password',
+	        hidden_class = 'invisible';
 	
 	    var fields = {
 	        txt_old_password: '#txt_old_password',
@@ -36602,13 +36603,13 @@
 	            };
 	            ChampionSocket.send(data).then(function (response) {
 	                if (response.error) {
-	                    $('#error-change-password').removeClass('hidden').text(response.error.message);
+	                    $('#msg_form').removeClass(hidden_class).text(response.error.message);
 	                } else {
 	                    setTimeout(function () {
 	                        ChampionSocket.send({ logout: 1 });
 	                    }, 5000);
-	                    $form.addClass('hidden');
-	                    $('#client_message').show().find('.notice-msg').text('Your password has been changed. Please log in again.');
+	                    $form.addClass(hidden_class);
+	                    $('.notice-msg').removeClass(hidden_class).text('Your password has been changed.');
 	                }
 	            });
 	        }
