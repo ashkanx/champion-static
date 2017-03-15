@@ -18,11 +18,11 @@
     <meta name="description" content="ChampionFX Static" />
     <link rel="icon" type="image/png" sizes="16x16" href="/beta/images/favicons/CFX_favicon16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/beta/images/favicons/CFX_favicon32.png" />
-     <link rel="stylesheet" href="/beta/css/flex.min.css?4mxcka8n" />
-     <link rel="stylesheet" href="/beta/css/style.min.css?4mxcka8n" />
-     <link rel="stylesheet" href="https://style.champion-fx.com/binary.css?4mxcka8n" />
-      <script src="/beta/js/bundle.min.js?4mxcka8n" type="text/javascript"></script>
-     <script src="https://style.champion-fx.com/binary.js?4mxcka8n" type="text/javascript"></script>
+     <link rel="stylesheet" href="/beta/css/flex.min.css?oizwu6pn" />
+     <link rel="stylesheet" href="/beta/css/style.min.css?oizwu6pn" />
+     <link rel="stylesheet" href="https://style.champion-fx.com/binary.css?oizwu6pn" />
+      <script src="/beta/js/bundle.min.js?oizwu6pn" type="text/javascript"></script>
+     <script src="https://style.champion-fx.com/binary.js?oizwu6pn" type="text/javascript"></script>
      
 </head>
 <body>
@@ -66,7 +66,7 @@
         </div>
     </div>
 </div>
-    <div class="dark-blue header">
+    <div id="header" class="dark-blue header">
     <div class="menu-container">
         <div class="row">
             <div class="col-md-3 col-sm-6 col-xs-6 vertical-center">
@@ -138,12 +138,12 @@
                 <div id="main-signup" class="hidden">
                     <ul class="signup-button">
                         <li class="">
-                            <button class="button-secondary" href="javascript:;">Sign Up</button>
+                            <a class="button-secondary" href="/beta/en/home.html#signup"><span>Sign Up</span></a>
                         </li>
                     </ul>
                 </div>
             </div>
-            <div class="col-md-7 pull-md-2 hidden-sm-down">
+            <div class="col-md-7 pull-md-2 hidden-sm-down vertical-center">
                 <ul class="top-nav-menu">
                     <li>
                         <a href="/beta/en/about-us.html" class="nav-dropdown-toggle">About</a>
@@ -235,15 +235,15 @@
                 <div id="demo">Open a free Demo account.</div>
                 <div id="champion_cent">
                     The Cent account offers the highest leverage, as well as low margin call and stop out level.
-                    <a href="forex#forex-accounts-cent" target="_blank">Read more</a>
+                    <a href="/beta/en/forex/accounts/cent.html" target="_blank">Read more</a>
                 </div>
                 <div id="champion_standard">
                     The Standard account is suitable for a wide range of traders, both new and experienced.
-                    <a href="forex#forex-accounts-standard" target="_blank">Read more</a>
+                    <a href="/beta/en/forex/accounts/standard.html" target="_blank">Read more</a>
                 </div>
                 <div id="champion_stp">
                     The STP account provides you with the tightest spreads and connects you directly to the market.
-                    <a href="forex#forex-accounts-stp" target="_blank">Read more</a>
+                    <a href="/beta/en/forex/accounts/stp.html" target="_blank">Read more</a>
                 </div>
             </div>
 
@@ -309,8 +309,7 @@
 
                 <div class="submit-row ">
     <p id="msg_form" class="error-msg invisible"></p>
-    <button id="btn_submit" type="submit">Create account</button>
-</div>
+    <button id="btn_submit" type="submit">Create account</button> </div>
             </form>
 
             <form id="frm_password_change">
@@ -343,8 +342,7 @@
 
                 <div class="submit-row ">
     <p id="msg_form" class="error-msg invisible"></p>
-    <button id="btn_submit" type="submit">Change Password</button>
-</div>
+    <button id="btn_submit" type="submit">Change Password</button> </div>
             </form>
 
             <form id="frm_deposit">
@@ -366,16 +364,15 @@
     
 </div>
                 <div class="form-row ">
-    <label for="txt_amount">Amount</label>
+    <label for="txt_amount">Amount (&#36;)</label>
     
-                &#36; <input type="text" id="txt_amount" maxlength="10" />
+                <input type="text" id="txt_amount" maxlength="10" />
     
 </div>
 
                 <div class="submit-row ">
     <p id="msg_form" class="error-msg invisible"></p>
-    <button id="btn_submit" type="submit">Deposit</button>
-</div>
+    <button id="btn_submit" type="submit">Deposit</button> </div>
             </form>
 
             <form id="frm_withdrawal">
@@ -403,16 +400,15 @@
     
 </div>
                 <div class="form-row ">
-    <label for="txt_amount">Amount</label>
+    <label for="txt_amount">Amount (&#36;)</label>
     
-                &#36; <input type="text" id="txt_amount" maxlength="10" />
+                <input type="text" id="txt_amount" maxlength="10" />
     
 </div>
 
                 <div class="submit-row ">
     <p id="msg_form" class="error-msg invisible"></p>
-    <button id="btn_submit" type="submit">Withdraw</button>
-</div>
+    <button id="btn_submit" type="submit">Withdraw</button> </div>
             </form>
 
             <div id="messages">
@@ -493,7 +489,7 @@
             </div>
         </div>
     </div>
-    <div id="end_note" class="invisible"></div>
+    <div id="end_note" class="invisible hidden-xs-down"></div>
 </footer>
 </body>
 </html>

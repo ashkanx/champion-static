@@ -18464,7 +18464,7 @@
 	var ChampionSocket = __webpack_require__(308);
 	var default_redirect_url = __webpack_require__(304).default_redirect_url;
 	var Utility = __webpack_require__(306);
-	var BinaryOptions = __webpack_require__(314);
+	var ClientType = __webpack_require__(314);
 	var ChampionContact = __webpack_require__(299);
 	var ChampionEndpoint = __webpack_require__(315);
 	var MT5 = __webpack_require__(316);
@@ -18537,6 +18537,7 @@
 	            contact: { module: ChampionContact },
 	            endpoint: { module: ChampionEndpoint },
 	            forward: { module: CashierDepositWithdraw, is_authenticated: true, only_real: true },
+	            home: { module: Home },
 	            logged_inws: { module: LoggedIn },
 	            metatrader: { module: MetaTrader, is_authenticated: true },
 	            mt5: { module: MT5 },
@@ -18545,7 +18546,6 @@
 	            settings: { module: ChampionSettings, is_authenticated: true },
 	            security: { module: ChampionSecurity, is_authenticated: true },
 	            virtual: { module: ChampionNewVirtual, not_authenticated: true },
-	            'binary-options': { module: BinaryOptions },
 	            'cashier-password': { module: CashierPassword, is_authenticated: true, only_real: true },
 	            'change-password': { module: ChangePassword, is_authenticated: true },
 	            'lost-password': { module: LostPassword, not_authenticated: true },
@@ -18553,7 +18553,7 @@
 	            'reset-password': { module: ResetPassword, not_authenticated: true },
 	            'tnc-approval': { module: TNCApproval, is_authenticated: true, only_real: true },
 	            'top-up-virtual': { module: CashierTopUpVirtual, is_authenticated: true, only_virtual: true },
-	            home: { module: Home }
+	            'types-of-accounts': { module: ClientType }
 	        };
 	        if (page in pages_map) {
 	            loadHandler(pages_map[page]);
@@ -19969,7 +19969,7 @@
 	            var window_path = window.location.pathname;
 	            var path = window_path.replace(/\/$/, '');
 	            var href = decodeURIComponent(path);
-	            $('#top-nav-menu li a').each(function () {
+	            $('.top-nav-menu li a').each(function () {
 	                var target = $(this).attr('href');
 	                if (target === href) {
 	                    $(this).addClass('active');
@@ -20344,7 +20344,6 @@
 	    var xhr = void 0;
 	    var params = {},
 	        defaults = {
-	        timeout: 650,
 	        type: 'GET',
 	        dataType: 'html'
 	    },
@@ -20388,7 +20387,8 @@
 	            params.container.trigger('champion:after', content);
 	        }
 	
-	        $(document).find('a').on('click', handleClick);
+	        $(document).find('#header a').on('click', handleClick);
+	        $(document).on('click', 'a', handleClick);
 	        $(window).on('popstate', handlePopstate);
 	    };
 	
@@ -20432,19 +20432,19 @@
 	        }
 	    };
 	
-	    var processUrl = function processUrl(url, replace) {
+	    var processUrl = function processUrl(url, replace, no_scroll) {
 	        var cached_content = cacheGet(url);
 	        if (cached_content) {
-	            replaceContent(url, cached_content, replace);
+	            replaceContent(url, cached_content, replace, no_scroll);
 	        } else {
-	            load(url, replace);
+	            load(url, replace, no_scroll);
 	        }
 	    };
 	
 	    /**
 	     * Load url from server
 	     */
-	    var load = function load(url, replace) {
+	    var load = function load(url, replace, no_scroll) {
 	        var lang = getLanguage();
 	        var options = $.extend(true, {}, $.ajaxSettings, defaults, {
 	            url: url.replace(new RegExp('/' + lang + '/', 'i'), '/' + lang.toLowerCase() + '/pjax/') });
@@ -20463,7 +20463,7 @@
 	
 	            setDataPage(result.content, url);
 	            cachePut(url, result);
-	            replaceContent(url, result, replace);
+	            replaceContent(url, result, replace, no_scroll);
 	        };
 	
 	        // Cancel the current request if we're already loading some page
@@ -20475,12 +20475,12 @@
 	    var handlePopstate = function handlePopstate(e) {
 	        var url = e.originalEvent.state ? e.originalEvent.state.url : window.location.href;
 	        if (url) {
-	            processUrl(url, true);
+	            processUrl(url, true, true);
 	        }
 	        return false;
 	    };
 	
-	    var replaceContent = function replaceContent(url, content, replace) {
+	    var replaceContent = function replaceContent(url, content, replace, no_scroll) {
 	        window.history[replace ? 'replaceState' : 'pushState']({ url: url }, content.title, url);
 	
 	        params.container.trigger('champion:before');
@@ -20490,6 +20490,10 @@
 	        params.container.append(content.content.clone());
 	
 	        params.container.trigger('champion:after', content.content);
+	
+	        if (!no_scroll) {
+	            $.scrollTo('body', 500);
+	        }
 	    };
 	
 	    var abortXHR = function abortXHR(xhrObj) {
@@ -20499,11 +20503,15 @@
 	    };
 	
 	    var cachePut = function cachePut(url, content) {
-	        cache[url] = content;
+	        cache[cleanUrl(url)] = content;
 	    };
 	
 	    var cacheGet = function cacheGet(url) {
-	        return cache[url];
+	        return cache[cleanUrl(url)];
+	    };
+	
+	    var cleanUrl = function cleanUrl(url) {
+	        return url.replace(/(\?|#).*$/, '');
 	    };
 	
 	    var locationReplace = function locationReplace(url) {
@@ -20528,33 +20536,24 @@
 	__webpack_require__(307);
 	var Client = __webpack_require__(301);
 	
-	var BinaryOptions = function () {
+	var ClientType = function () {
 	    'use strict';
 	
 	    var load = function load() {
 	        if (Client.is_logged_in()) {
-	            $('#virtual-signup-button').hide();
+	            $('.virtual-signup').hide();
 	            if (Client.has_real()) {
-	                $('#real-signup-button').hide();
+	                $('.real-signup').hide();
 	            }
-	        } else {
-	            $('#virtual-signup-button').on('click', function () {
-	                $.scrollTo('#verify-email-form', 500);
-	            });
 	        }
 	    };
 	
-	    var unload = function unload() {
-	        $('#virtual-signup-button').off('click');
-	    };
-	
 	    return {
-	        load: load,
-	        unload: unload
+	        load: load
 	    };
 	}();
 	
-	module.exports = BinaryOptions;
+	module.exports = ClientType;
 
 /***/ },
 /* 315 */
@@ -20571,20 +20570,20 @@
 	    var $container = void 0,
 	        $txt_server_url = void 0,
 	        $txt_app_id = void 0,
-	        $btn_set_endpoint = void 0,
-	        $btn_reset_endpoint = void 0;
+	        $btn_submit = void 0,
+	        $btn_reset = void 0;
 	
 	    var load = function load() {
 	        $container = $('#champion-container');
 	        $txt_server_url = $container.find('#txt_server_url');
 	        $txt_app_id = $container.find('#txt_app_id');
-	        $btn_set_endpoint = $container.find('#btn_set_endpoint');
-	        $btn_reset_endpoint = $container.find('#btn_reset_endpoint');
+	        $btn_submit = $container.find('#btn_submit');
+	        $btn_reset = $container.find('#btn_reset');
 	
 	        $txt_server_url.val(getServer());
 	        $txt_app_id.val(getAppId());
 	
-	        $btn_set_endpoint.on('click', function (e) {
+	        $btn_submit.on('click', function (e) {
 	            e.preventDefault();
 	
 	            var server_url = ($txt_server_url.val() || '').trim().toLowerCase().replace(/[><()\"\']/g, '');
@@ -20600,7 +20599,7 @@
 	            window.location.reload();
 	        });
 	
-	        $btn_reset_endpoint.on('click', function (e) {
+	        $btn_reset.on('click', function (e) {
 	            e.preventDefault();
 	            localStorage.removeItem('config.server_url');
 	            localStorage.removeItem('config.app_id');
@@ -20609,8 +20608,8 @@
 	    };
 	
 	    var unload = function unload() {
-	        $btn_set_endpoint.off('click');
-	        $btn_reset_endpoint.off('click');
+	        $btn_submit.off('click');
+	        $btn_reset.off('click');
 	    };
 	
 	    return {
@@ -36634,6 +36633,7 @@
 	            topup_virtual: '1'
 	        };
 	        ChampionSocket.send(data).then(function (response) {
+	            $('#topup_loading').remove();
 	            if (response.error) {
 	                viewError.removeClass('hidden').find('.notice-msg').text(response.error.message);
 	            } else {
@@ -37166,6 +37166,15 @@
 	            $acc_item.find('.has-account').removeClass(hidden_class);
 	        } else {
 	            $acc_item.find('.no-account').removeClass(hidden_class).find('.info').html($templates.find('#' + acc_type));
+	
+	            // Display account creation form if url has a hash like: #create_champion_cent
+	            var hash = window.location.hash;
+	            if (hash && hash === '#create_' + acc_type) {
+	                $acc_item.find('.act_new_account').click();
+	                // remove hash from url
+	                var url = window.location.href.split('#')[0];
+	                window.history.replaceState({ url: url }, null, url);
+	            }
 	        }
 	    };
 	
@@ -37507,6 +37516,12 @@
 	
 	    var load = function load() {
 	        Slider.init();
+	        var hash = window.location.hash.substring(1);
+	        if (hash === 'signup') {
+	            setTimeout(function () {
+	                $.scrollTo($('#verify-email-form'), 500);
+	            }, 500);
+	        }
 	    };
 	
 	    var unload = function unload() {
