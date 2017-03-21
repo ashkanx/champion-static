@@ -14,7 +14,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
 
-    <title>Cashier | Champion-FX.com</title>
+    <title>Trading Times | Champion-FX.com</title>
     <meta name="description" content="ChampionFX Static" />
     <link rel="icon" type="image/png" sizes="16x16" href="/images/favicons/CFX_favicon16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/images/favicons/CFX_favicon32.png" />
@@ -168,34 +168,22 @@
 
     <main class="page-content" aria-label="Content" id="champion-container">
         <div class="wrapper" id="champion-content">
-            <div class="fx-section">
-    <div id="cashier_deposit" class="container">
-        <h1 class="main-title" id="cashier_title" style="text-transform: capitalize">Complete your ChampionFX virtual account signup</h1>
-
-        <p id="error_msg" class="notice-msg center-text invisible"></p>
-
-        <div id="form_withdraw" class="invisible">
-            <div class="form-row ">
-    <label for="verification_token">Verification token</label>
-    
-                <input type="text" id="verification_token" maxlength="48" autocomplete="off" />
-    <p class="hint">Please check your email for the token</p>
-</div>
-
-            <div class="submit-row ">
-    <p id="msg_form" class="error-msg invisible"></p>
-    <button id="btn_submit" type="submit">Submit</button> </div>
-        </div>
-
-        <div class="row">
-            <div id="deposit_iframe_container" class="invisible">
-                <iframe src="" frameborder="0" width="100%" height="1500" scrolling="auto" style="padding:0;margin:0;"></iframe>
-            </div>
-            <div id="withdraw_iframe_container" class="invisible">
-                <iframe src="" frameborder="0" width="100%" height="1500" scrolling="auto" style="padding:0;margin:0;"></iframe>
-            </div>
-        </div>
+            <div class="fx-section container">
+    <h1 class="main-title" >Trading times</h1>
+    <div>
+        <span>Date:</span>
+        <input type="text" id="trading-date" readonly="readonly" size="12" />
+        <p>All times are in GMT (Greenwich Mean Time)</p>
     </div>
+    <div class="barspinner dark">
+    <div class="rect1"></div>
+    <div class="rect2"></div>
+    <div class="rect3"></div>
+    <div class="rect4"></div>
+    <div class="rect5"></div>
+</div>
+    <p class="error-msg"></p>
+    <div id="fx-trading-times" class="has-tabs"></div>
 </div>
         </div>
     </main>
