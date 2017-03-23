@@ -18463,6 +18463,7 @@
 	var ChampionRouter = __webpack_require__(313);
 	var ChampionSocket = __webpack_require__(308);
 	var default_redirect_url = __webpack_require__(306).default_redirect_url;
+	var url_for = __webpack_require__(306).url_for;
 	var Utility = __webpack_require__(303);
 	var ClientType = __webpack_require__(314);
 	var ChampionContact = __webpack_require__(299);
@@ -18488,6 +18489,7 @@
 	var ChampionSecurity = __webpack_require__(454);
 	var LoginHistory = __webpack_require__(455);
 	var TradingTimes = __webpack_require__(456);
+	var Limits = __webpack_require__(457);
 	
 	var Champion = function () {
 	    'use strict';
@@ -18540,6 +18542,7 @@
 	            endpoint: { module: ChampionEndpoint },
 	            forward: { module: CashierDepositWithdraw, is_authenticated: true, only_real: true },
 	            home: { module: Home },
+	            limits: { module: Limits, is_authenticated: true, only_real: true },
 	            logged_inws: { module: LoggedIn },
 	            metatrader: { module: MetaTrader, is_authenticated: true },
 	            mt5: { module: MT5 },
@@ -18573,8 +18576,8 @@
 	    };
 	
 	    var errorMessages = {
-	        login: function login() {
-	            return Utility.template('Please <a href="[_1]">log in</a> to view this page.', [Login.login_url()]);
+	        login: function login(module) {
+	            return module === MetaTrader ? Utility.template('To register an MT5 account, please <a href="[_1]">log in</a> to your ChampionFX account<br />\n                Don\'t have a ChampionFX account? <a href="[_2]">Create one</a> now', [Login.login_url(), url_for('/')]) : Utility.template('Please <a href="[_1]">log in</a> to view this page.', [Login.login_url()]);
 	        },
 	        only_virtual: 'Sorry, this feature is available to virtual accounts only.',
 	        only_real: 'This feature is not relevant to virtual-money accounts.'
@@ -18584,7 +18587,7 @@
 	        active_script = config.module;
 	        if (config.is_authenticated) {
 	            if (!Client.is_logged_in()) {
-	                displayMessage(errorMessages.login());
+	                displayMessage(errorMessages.login(config.module));
 	            } else {
 	                ChampionSocket.wait('authorize').then(function (response) {
 	                    if (response.error) {
@@ -20419,7 +20422,7 @@
 	        }
 	
 	        // Exclude links having no-ajax or target="_blank"
-	        if (link.classList.contains('no-ajax') || link.target === '_blank') {
+	        if (link.classList.contains('no-ajax') || link.target === '_blank' || !/\.html/i.test(url)) {
 	            return;
 	        }
 	
@@ -46689,6 +46692,94 @@
 	}();
 	
 	module.exports = TradingTimes;
+
+/***/ },
+/* 457 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	var ChampionSocket = __webpack_require__(308);
+	
+	var Limits = function () {
+	    'use strict';
+	
+	    var $trading_limits = void 0,
+	        $withdrawal_limits = void 0;
+	
+	    var hidden_class = 'invisible';
+	
+	    var load = function load() {
+	        $trading_limits = $('#fx-trading-limits');
+	        $withdrawal_limits = $('#fx-withdrawal-limits');
+	
+	        ChampionSocket.send({ get_limits: 1 }).then(function (response) {
+	            if (response.error) {
+	                $('#error-msg').html(response.error.message);
+	            } else {
+	                handleResponse(response.get_limits);
+	            }
+	        });
+	    };
+	
+	    var handleResponse = function handleResponse(data) {
+	        // Trading limits
+	        var trading_limits_header = '<tr><th>Item</th><th>Limits</th></tr><tr>';
+	        var trading_limits_contents = '<tr><td>Maximum number of open positions</td>\n                         <td>' + data.open_positions + '</td></tr>\n                     <tr><td>Maximum account cash balance</td>\n                         <td>' + formatNumbers(data.account_balance) + '</td></tr>\n                     <tr><td>Maximum aggregate payouts on open positions</td>\n                         <td>' + formatNumbers(data.payout) + '</td></tr>\n                     <tr><td>Maximum aggregate payouts on open positions per symbol and contract type</td>\n                         <td>' + formatNumbers(data.payout_per_symbol_and_contract_type) + '</td></tr>';
+	        $trading_limits.append('<table>' + trading_limits_header + trading_limits_contents + '</table><br>');
+	
+	        var market_specific = data.market_specific;
+	        var market_specific_header = '<tr><th>Maximum daily turnover</th><th>Limits</th></tr>';
+	        var market_specific_contents = '';
+	        Object.keys(market_specific).forEach(function (market) {
+	            var submarkets = market_specific[market];
+	            var market_header = '<tr><td class=\'market\' colspan=\'2\'>' + market + '</td></tr>';
+	            var market_rows = submarkets.map(function (submarket) {
+	                return '<tr><td class=\'submarket\'>' + submarket.name + '</td>\n                      <td class=\'limit\'>' + formatNumbers(submarket.turnover_limit) + '</td></tr>';
+	            }).join('');
+	            market_specific_contents += '' + market_header + market_rows;
+	        });
+	
+	        var hint = '<p class="hint">Stated limits are subject to change without prior notice.</p>';
+	        $trading_limits.append('<table>' + market_specific_header + market_specific_contents + '</table>' + hint);
+	
+	        // Withdrawal limits
+	        var withdrawal_msg = '';
+	        if (data.lifetime_limit === 99999999 && data.num_of_days_limit === 99999999) {
+	            withdrawal_msg = '<p>Your account is fully authenticated and your withdrawal limits have been lifted.</p>';
+	        } else {
+	            var days_limit = data.num_of_days_limit;
+	            var withdrawn = data.withdrawal_since_inception_monetary;
+	            var remainder = data.remainder;
+	
+	            withdrawal_msg = '<p>Your withdrawal limit is &dollar;' + days_limit + '.</p>\n                              <p>You have already withdrawn &dollar;' + withdrawn + '.</p>\n                              <p>Therefore your current immediate maximum withdrawal \n                                 (subject to your account having sufficient funds) is &dollar;' + remainder + '.</p>';
+	        }
+	        $withdrawal_limits.append(withdrawal_msg);
+	
+	        $('.barspinner').addClass(hidden_class);
+	        $('#fx-limits').removeClass(hidden_class);
+	    };
+	
+	    var formatNumbers = function formatNumbers(num, decimal_points) {
+	        num = String(num || 0).replace(/,/g, '') * 1;
+	        return num.toFixed(decimal_points).toString().replace(/(^|[^\w.])(\d{4,})/g, function ($0, $1, $2) {
+	            return $1 + $2.replace(/\d(?=(?:\d\d\d)+(?!\d))/g, '$&,');
+	        });
+	    };
+	
+	    var unload = function unload() {
+	        $trading_limits.empty();
+	        $withdrawal_limits.empty();
+	        $('.barspinner').removeClass(hidden_class);
+	    };
+	
+	    return {
+	        load: load,
+	        unload: unload
+	    };
+	}();
+	
+	module.exports = Limits;
 
 /***/ }
 /******/ ]);
