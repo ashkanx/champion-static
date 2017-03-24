@@ -20842,7 +20842,7 @@
 	        );
 	    };
 	    var validEmailToken = function validEmailToken(value) {
-	        return value.trim().length === 48;
+	        return value.trim().length === 8;
 	    };
 	
 	    var validCompare = function validCompare(value, options) {
