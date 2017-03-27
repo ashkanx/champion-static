@@ -845,6 +845,18 @@ img.float-right {
   display: none;
 }
 
+img.responsive {
+  max-width: 100%;
+}
+
+iframe {
+  width: 100%;
+}
+
+.margin-bottom-3 {
+  margin-bottom: 3em;
+}
+
 .fx-advisors {
   background: url("../images/symbols/advisors.svg");
 }
@@ -2054,28 +2066,28 @@ img.float-right {
 }
 
 #slide-2 {
-  background: url("../images/slider/banner2.png") no-repeat center center;
+  background: url("../images/slider/banner2.jpg") no-repeat center center;
   background-size: cover;
   height: 500px;
   width: 100%;
 }
 
 #slide-3 {
-  background: url("../images/slider/banner3.png") no-repeat center center;
+  background: url("../images/slider/banner3.jpg") no-repeat center center;
   background-size: cover;
   height: 500px;
   width: 100%;
 }
 
 #slide-4 {
-  background: url("../images/slider/banner4.png") no-repeat center center;
+  background: url("../images/slider/banner4.jpg") no-repeat center center;
   background-size: cover;
   height: 500px;
   width: 100%;
 }
 
 #slide-5 {
-  background: url("../images/slider/banner5.png") no-repeat center center;
+  background: url("../images/slider/banner5.jpg") no-repeat center center;
   background-size: cover;
   height: 500px;
   width: 100%;
@@ -2149,6 +2161,10 @@ img.float-right {
 
   .fx-package {
     margin-top: 50px;
+  }
+
+  .table-container {
+    overflow-x: auto;
   }
 }
 @media (min-width: 768px) {
