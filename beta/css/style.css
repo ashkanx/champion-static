@@ -319,6 +319,10 @@ h1.main-title {
   background-image: url("../images/forex.png");
 }
 
+.cfd-header {
+  background-image: url("../images/CFDs.png");
+}
+
 .fx-home-header {
   width: 100%;
   /* for IE 6 */
@@ -794,6 +798,14 @@ ul.no-padding, ul.no-padding li {
   margin-top: 0;
 }
 
+.no-margin-left {
+  margin-left: 0 !important;
+}
+
+.box .no-margin-left {
+  padding-left: 20px !important;
+}
+
 .has-tabs * {
   outline: none;
 }
@@ -825,8 +837,18 @@ img.float-right {
 }
 
 .center-align {
-  margin-left: auto;
-  margin-right: auto;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.margin-top-bottom {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.middle-align {
+  margin-top: auto !important;
+  margin-bottom: auto !important;
 }
 
 .no-gutters {
@@ -1110,6 +1132,12 @@ iframe {
 #header .top-nav-menu li ul {
   z-index: 10;
 }
+#header .top-nav-menu ul li a {
+  padding: 10px 15px;
+}
+#header .top-nav-menu ul li a.active {
+  border-bottom: none;
+}
 
 .main-nav > li > ul {
   box-sizing: content-box;
@@ -1122,6 +1150,15 @@ iframe {
 
 .logo, .logo-dark {
   height: 45px;
+}
+
+body .has-tabs .ui-tabs-panel {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+#indices-cfd-contract-specs table th {
+  max-width: 180px;
 }
 
 /* stylelint-disable selector-list-comma-newline-after, selector-list-comma-space-after */
