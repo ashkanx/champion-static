@@ -14,7 +14,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
 
-    <title>Range of Markets | Champion-FX.com</title>
+    <title>Self Exclusion | Champion-FX.com</title>
     <meta name="description" content="ChampionFX Static" />
     <link rel="icon" type="image/png" sizes="16x16" href="/beta/images/favicons/CFX_favicon16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/beta/images/favicons/CFX_favicon32.png" />
@@ -187,87 +187,111 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <div class="wrapper" id="champion-content">
             <div class="fx-section">
     <div class="container">
-        <div class="row">
-            <div class="col-sm">
-                <h1>Range of Markets</h1>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-sm">
-                <p>Step into a whole new world of trading with Champion FX. You can access many markets all through one platform. We have paved the way for you. All you have to do is step in.</p>
-                <p>Trade with Champion FX and take your trading to a whole new level.</p>
-                <p>Access global Forex, CFD's, indices, stocks, futures, and commodities all through one platform. Champion FX is commited to providing you with the most complete offering in online trading - today and tomorrow. We are always looking to expand our available instruments.</p>
-            </div>
-        </div>
-    </div>
+        <div class="gr-12 gr-padding-10">
+            <h1 class="main-title" >Self-Exclusion Facilities</h1>
+
+            <p>Trading the financial markets can become addictive. Fill in the form below to limit your participation on the website or send a signed letter or fax to our customer support team. Once set, you can only tighten your limits. Limits will only be removed or loosened after 7 days with the exception of the self-exclusion date, which cannot be removed or altered once you have confirmed it. To remove or increase your limits, please contact <a href="/beta/en/contact.html">customer support</a>.</p>
+
+            <p id="msg_error" class="error-msg"></p>
+
+            <div class="barspinner dark">
+    <div class="rect1"></div>
+    <div class="rect2"></div>
+    <div class="rect3"></div>
+    <div class="rect4"></div>
+    <div class="rect5"></div>
 </div>
 
-<div class="container">
-    <div class="row">
-        <div class="col-sm">
-            <div class="fx-panel fill-bg-color">
-                <div class="fx-panel-title">
-                    <img src="/beta/images/symbols/forex.svg" alt="">
-                    <h4>Forex</h4>
-                </div>
-                <p>Trade over 70 FX pairs, combining ultra-low or fixed spreads and Non Dealing Desk (NDD) execution in a high-speed trading environment.</p>
-                <ul class="bullet">
-                    <li>Leverage Up To 1,000</li>
-                    <li>Fixed of Floating Spreads</li>
-                    <li>Instant Execution</li>
-                    <li>Over 70 FX Pairs Available</li>
-                </ul>
-            </div>
-        </div>
-        <div class="col-sm">
-            <div class="fx-panel fill-bg-color">
-                <div class="fx-panel-title">
-                    <img src="/beta/images/symbols/metals.svg" alt="">
-                    <h4>Metals</h4>
-                </div>
-                <p>Trade a variety of flexible precious metals contracts, including gold (per gram or ounce) with highly competitive pricing.</p>
-                <ul class="bullet">
-                    <li>Leverage Up To 1,000</li>
-                    <li>Fixed of Floating Spreads</li>
-                    <li>Instant Execution</li>
-                    <li>Over 70 FX Pairs Available</li>
-                </ul>
-            </div>
-        </div>
-
-    </div>
+            <form id="frm_self_exclusion" class="invisible">
+                <div class="form-row ">
+    <label for="max_balance">Maximum account cash balance</label>
+    
+                <input type="text" id="max_balance" maxlength="20" />
+    <p class="hint">Once this limit is reached, you may no longer deposit.</p>
 </div>
-<div class="container">
-    <div class="row">
-        <div class="col-sm">
-            <div class="fx-panel fill-bg-color">
-                <div class="fx-panel-title">
-                    <img src="/beta/images/symbols/futures.svg" alt="">
-                    <h4>Futures</h4>
-                </div>
-                <p>Trade futures contracts on a variety of underlying instruments.</p>
-                <ul class="bullet">
-                    <li>Indices, Agricultural Commodities, and Energies</li>
-                    <li>Perfect for Hedging Against Future Price Risk</li>
-                    <li>Commission Free</li>
-                </ul>
-            </div>
-        </div>
-        <div class="col-sm ">
-            <div class="fx-panel fill-bg-color">
-                <div class="fx-panel-title">
-                    <img src="/beta/images/symbols/cfd.svg" alt="">
-                    <h4>CFD Trading</h4>
-                </div>
-                <p>Trade contracts for difference (CFD) across equity indices, energies, alternative asset futures, and other instruments for more trading opportunities.</p>
-                <ul class="bullet">
-                    <li>Diversify Your Trading</li>
-                    <li>Access Global Markets</li>
-                    <li>Trade Long or Short</li>
-                </ul>
-            </div>
-        </div>
 
+                <div class="form-row ">
+    <label for="max_turnover">Daily turnover limit</label>
+    
+                <input type="text" id="max_turnover" maxlength="20" />
+    <p class="hint">Maximum aggregate contract purchases per day.</p>
+</div>
+
+                <div class="form-row ">
+    <label for="max_losses">Daily limit on losses</label>
+    
+                <input type="text" id="max_losses" maxlength="20" />
+    <p class="hint">Maximum aggregate loss per day.</p>
+</div>
+
+                <div class="form-row ">
+    <label for="max_7day_turnover">7-day turnover limit</label>
+    
+                <input type="text" id="max_7day_turnover" maxlength="20" />
+    <p class="hint">Maximum aggregate contract purchases over a 7-day period.</p>
+</div>
+
+                <div class="form-row ">
+    <label for="max_7day_losses">7-day limit on losses</label>
+    
+                <input type="text" id="max_7day_losses" maxlength="20" />
+    <p class="hint">Maximum aggregate loss over a 7-day period.</p>
+</div>
+
+                <div class="form-row ">
+    <label for="max_30day_turnover">30-day turnover limit</label>
+    
+                <input type="text" id="max_30day_turnover" maxlength="20" />
+    <p class="hint">Maximum aggregate contract purchases over a 30-day period.</p>
+</div>
+
+                <div class="form-row ">
+    <label for="max_30day_losses">30-day limit on losses</label>
+    
+                <input type="text" id="max_30day_losses" maxlength="20" />
+    <p class="hint">Maximum aggregate loss over a 30-day period.</p>
+</div>
+
+                <div class="form-row ">
+    <label for="max_open_bets">Maximum number of open positions</label>
+    
+                <input type="text" id="max_open_bets" maxlength="4" />
+    
+</div>
+
+                <div class="form-row ">
+    <label for="session_duration_limit">Session duration limit, in minutes</label>
+    
+                <input type="text" id="session_duration_limit" maxlength="5" />
+    <p class="hint">You will be automatically logged out after such time.</p>
+</div>
+
+                <div class="form-row ">
+    <label for="timeout_until_date">Time out until</label>
+    
+                
+                    <div class="form-row">
+                        <input type="text" id="timeout_until_date" maxlength="15" autocomplete="off" />
+                    </div>
+                    <div>
+                        <input type="text" id="timeout_until_time" maxlength="8" autocomplete="off" />
+                    </div>
+                
+    <p class="hint">Please enter date in the format DD MMM, YYYY HH:mm (local time).</p>
+</div>
+
+                <div class="form-row ">
+    <label for="exclude_until">Exclude me from the website until</label>
+    
+                <input type="text" id="exclude_until" maxlength="15" autocomplete="off" />
+    <p class="hint">Please enter date in the format DD MMM, YYYY.</p>
+</div>
+
+                <div class="submit-row ">
+    <p id="msg_form" class="error-msg invisible"></p>
+    <button id="btn_submit" type="submit">Update Settings</button> </div>
+            </form>
+        </div>
     </div>
 </div>
         </div>
