@@ -712,7 +712,7 @@ a:hover {
   width: 44em;
   text-align: center;
   background-color: #fff;
-  border-radius: 2px;
+  border-radius: 5px;
   max-height: 80vh;
   overflow: auto;
 }
@@ -1078,6 +1078,14 @@ iframe {
   margin-left: 0 !important;
 }
 
+.fx-no-deposit {
+  background: url("../images/symbols/nd_icon.svg");
+}
+
+.fx-test-platform {
+  background: url("../images/symbols/tp_icon.svg");
+}
+
 .fx-xlg, .fx-lg, .fx-md, .fx-sm, .fx-xs, .fx-xxs {
   margin-left: auto;
   margin-right: auto;
@@ -1170,6 +1178,34 @@ body .has-tabs .ui-tabs-panel {
 #fx-profile .ui-tabs-nav, #fx-profile .ui-tabs-panel {
   width: auto;
   float: none;
+}
+
+#ui-timepicker-div, #ui-timepicker-div:before, #ui-timepicker-div:after, #ui-datepicker-div, #ui-datepicker-div:before, #ui-datepicker-div:after {
+  transition: none;
+}
+
+.ui-datepicker.ui-widget-content, .ui-timepicker-table.ui-widget-content {
+  border: 0;
+}
+.ui-datepicker.ui-corner-all, .ui-datepicker .ui-corner-all, .ui-timepicker-table.ui-corner-all, .ui-timepicker-table .ui-corner-all {
+  border-radius: 0;
+}
+
+#ui-timepicker-div .ui-state-default, #ui-timepicker-div .ui-widget-content .ui-state-default {
+  width: 80%;
+}
+
+button .barspinner.white {
+  height: 13px;
+  margin: 3px auto;
+}
+
+.slick-slide ul.bullet {
+  padding: 1.25em 0 1.25em 1.25em;
+  margin: 0;
+}
+.slick-slide a:focus {
+  outline: none;
 }
 
 /* stylelint-disable selector-list-comma-newline-after, selector-list-comma-space-after */
@@ -1369,7 +1405,7 @@ body .has-tabs .ui-tabs-panel {
   margin: 0;
   position: relative;
   vertical-align: middle;
-  width: 280px !important;
+  width: 350px !important;
 }
 .select2-container .select2-selection--single, .select2-container .select2-selection--multiple {
   box-sizing: border-box;
@@ -1417,7 +1453,7 @@ body .has-tabs .ui-tabs-panel {
 .select2-dropdown {
   background-color: #fff;
   border: 1px solid #F2F2F2;
-  border-radius: 2px;
+  border-radius: 5px;
   box-sizing: border-box;
   display: block;
   position: absolute;
@@ -1507,7 +1543,7 @@ body .has-tabs .ui-tabs-panel {
 .select2-container--default .select2-selection--single {
   background-color: #fff;
   border: 1px solid #F2F2F2;
-  border-radius: 2px;
+  border-radius: 5px;
 }
 .select2-container--default .select2-selection--single .select2-selection__rendered {
   color: #000;
@@ -1576,8 +1612,8 @@ body .has-tabs .ui-tabs-panel {
 }
 .select2-container--default .select2-selection--multiple {
   background-color: #fff;
-  border: 1px solid #F2F2F2;
-  border-radius: 2px;
+  border: 1px solid #004385;
+  border-radius: 5px;
   cursor: text;
 }
 .select2-container--default .select2-selection--multiple .select2-selection__rendered {
@@ -1606,7 +1642,7 @@ body .has-tabs .ui-tabs-panel {
 .select2-container--default .select2-selection--multiple .select2-selection__choice {
   background-color: #F2F2F2;
   border: 1px solid #DEDEDE;
-  border-radius: 2px;
+  border-radius: 5px;
   cursor: default;
   float: left;
   margin-right: 5px;
@@ -1642,7 +1678,7 @@ body .has-tabs .ui-tabs-panel {
   padding: 6px;
 }
 .select2-container--default.select2-container--focus .select2-selection--multiple {
-  border: solid 1px #F2F2F2;
+  border: solid 1px #004385;
   outline: 0;
 }
 .select2-container--default .select2-search--dropdown .select2-search__field {
@@ -1711,7 +1747,7 @@ body .has-tabs .ui-tabs-panel {
 .select2-container--classic .select2-selection--single {
   background-color: #F2F2F2;
   border: 1px solid #F2F2F2;
-  border-radius: 2px;
+  border-radius: 5px;
   outline: 0;
   background-image: linear-gradient(to bottom, #fff 50%, #DEDEDE 100%);
   background-repeat: repeat-x;
@@ -1810,7 +1846,7 @@ body .has-tabs .ui-tabs-panel {
 .select2-container--classic .select2-selection--multiple {
   background-color: #fff;
   border: 1px solid #F2F2F2;
-  border-radius: 2px;
+  border-radius: 5px;
   cursor: text;
   outline: 0;
 }
@@ -1828,7 +1864,7 @@ body .has-tabs .ui-tabs-panel {
 .select2-container--classic .select2-selection--multiple .select2-selection__choice {
   background-color: #F2F2F2;
   border: 1px solid #DEDEDE;
-  border-radius: 2px;
+  border-radius: 5px;
   cursor: default;
   float: left;
   margin-right: 5px;
