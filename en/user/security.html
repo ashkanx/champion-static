@@ -18,11 +18,11 @@
     <meta name="description" content="ChampionFX Static" />
     <link rel="icon" type="image/png" sizes="16x16" href="/images/favicons/CFX_favicon16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/images/favicons/CFX_favicon32.png" />
-     <link rel="stylesheet" href="/css/flex.min.css?9l1sdqs2" />
-     <link rel="stylesheet" href="/css/style.min.css?9l1sdqs2" />
-     <link rel="stylesheet" href="https://style.champion-fx.com/binary.css?9l1sdqs2" />
-      <script src="/js/bundle.min.js?9l1sdqs2" type="text/javascript"></script>
-     <script src="https://style.champion-fx.com/binary.js?9l1sdqs2" type="text/javascript"></script>
+     <link rel="stylesheet" href="/css/flex.min.css?kwpk8tyz" />
+     <link rel="stylesheet" href="/css/style.min.css?kwpk8tyz" />
+     <link rel="stylesheet" href="https://style.champion-fx.com/binary.css?kwpk8tyz" />
+      <script src="/js/bundle.min.js?kwpk8tyz" type="text/javascript"></script>
+     <script src="https://style.champion-fx.com/binary.js?kwpk8tyz" type="text/javascript"></script>
      
 </head>
 <body>
@@ -82,9 +82,10 @@
                 </div>
             </div>
             <div class="col-md-2 push-md-7 col-sm-6 col-xs-6 vertical-center">
-                <div id="main-logout" class="invisible">
+                <div id="main-logout" class="hidden-lg-up">
                     <ul id="main-account" class="nav-menu main-nav">
-                        <li class="account">
+                        <li id="mobile_menu_icon" class="logged-out vertical-center hidden-lg-up invisible"><span></span></li>
+                        <li class="account logged-in invisible">
                             <a href="javascript:;">
                                 <div class="main-account">
                                     <div class="account-type"></div>
@@ -97,7 +98,7 @@
                     </ul>
                     <ul id="all-accounts" class="nav-menu main-nav">
                         <li class="account">
-                            <a href="javascript:;">
+                            <a href="javascript:;" class="menu-icon">
                                 <div class="main-account">
                                     <div class="account-type"></div>
                                     <div class="account-id"></div>
@@ -106,36 +107,47 @@
                                 <div class="nav-caret"></div>
                             </a>
                             <ul>
-                                <a class="link" href="/en/user/settings.html">
+                                <a class="link invisible logged-out" href="/en/home.html#signup">
+                                    <li>Sign Up</li>
+                                </a>
+                                <a class="link invisible logged-in" href="/en/user/settings.html">
                                     <li class="topMenuSettings">Settings</li>
                                 </a>
                                 <div class="separator-line-thin-gray"></div>
-                                <a class="link" href="/en/cashier.html">
+                                <a class="link invisible logged-in" href="/en/cashier.html">
                                     <li class="topMenuCashier">Cashier</li>
                                 </a>
-                                <div class="separator-line-thin-gray"></div>
-                                <a href="/en/about-us.html" class="hidden-sm-up">
+                                <div class="separator-line-thin-gray invisible logged-in"></div>
+                                <a href="/en/about-us.html" class="hidden-lg-up">
                                     <li>About</li>
                                 </a>
-                                <a href="/en/forex.html" class="hidden-sm-up">
-                                    <li>MT5</li>
-                                </a>
-                                <a href="/en/binary-options.html" class="hidden-sm-up">
+                                <li class="hidden-lg-up has-sub">
+                                    <a href="javascript:;">MT5</a>
+                                    <ul class="invisible">
+                                        <li><a href="/en/forex.html">Forex</a></li>
+                                        <li><a href="/en/cfd.html">CFDs</a></li>
+                                        <li><a href="/en/metals.html">Metals</a></li>
+                                    </ul>
+                                </li>
+                                <a href="/en/binary-options.html" class="hidden-lg-up">
                                     <li>Binary Options</li>
                                 </a>
-                                <a href="/en/partnerships.html" class="hidden-sm-up">
+                                <a href="/en/trading-platform.html" class="hidden-lg-up">
+                                    <li>Trading Platforms</li>
+                                </a>
+                                <a href="/en/partnerships.html" class="hidden-lg-up">
                                     <li>Partnerships</li>
                                 </a>
-                                <div class="separator-line-thin-gray hidden-sm-up"></div>
+                                <div class="separator-line-thin-gray hidden-lg-up invisible logged-in"></div>
                                 <div class="login-id-list"></div>
-                                <a href="javascript:;" id="btn_logout" class="logout">
+                                <a href="javascript:;" id="btn_logout" class="logout invisible logged-in">
                                     <li>Sign out</li>
                                 </a>
                             </ul>
                         </li>
                     </ul>
                 </div>
-                <div id="main-signup" class="invisible">
+                <div id="main-signup" class="logged-out invisible hidden-lg-down">
                     <ul class="signup-button">
                         <li class="">
                             <a class="button-secondary" href="/en/home.html#signup"><span>Sign Up</span></a>
@@ -143,7 +155,7 @@
                     </ul>
                 </div>
             </div>
-            <div class="col-md-7 pull-md-2 hidden-sm-down vertical-center">
+            <div class="col-md-7 pull-md-2 hidden-lg-down vertical-center">
                 <ul class="top-nav-menu">
                     <li>
                         <a href="/en/about-us.html" class="nav-dropdown-toggle">About</a>
@@ -216,17 +228,17 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                         </div>
                         <div class="col-md-3 fx-real" style="display: none">
                             <a href="/en/user/limits.html">
-                                <h3>Limits</h3>
+                                <h3>Trading limits</h3>
                             </a>
                             <div class="separator primary-color"></div>
-                            <p>View your trading and withdrawal limits.</p>
+                            <p>View your trading and withdrawal limits for our Champion Trader platform.</p>
                         </div>
                         <div class="col-md-3 offset-lg-1 fx-real" style="display: none">
                             <a href="/en/user/self-exclusion.html">
-                                <h3>Self Exclusion</h3>
+                                <h3>Self exclusion</h3>
                             </a>
                             <div class="separator primary-color"></div>
-                            <p>Facility that allows you to set limits on your account.</p>
+                            <p>Set limits and minimise unrestrained trading for our Champion Trader platform.</p>
                         </div>
                     </div>
                 </div>
