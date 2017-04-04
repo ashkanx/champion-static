@@ -33962,7 +33962,8 @@
 	        if (isReady()) {
 	            var token = Cookies.get('token');
 	            if (token) {
-	                send({ authorize: token });
+	                State.set(['response', 'authorize'], undefined);
+	                send({ authorize: token }, true);
 	            }
 	            send({ website_status: 1 });
 	
