@@ -1231,6 +1231,9 @@ body .has-tabs .ui-tabs-panel {
   max-width: 180px;
 }
 
+#fx-profile.ui-tabs-vertical {
+  width: auto;
+}
 #fx-profile .ui-tabs-nav, #fx-profile .ui-tabs-panel {
   width: auto;
   float: none;
