@@ -18731,6 +18731,7 @@
 	        ChampionSocket.send({ get_settings: 1 });
 	        ChampionSocket.send({ get_account_status: 1 });
 	        ChampionSocket.send({ get_financial_assessment: 1 });
+	        ChampionSocket.send({ mt5_login_list: 1 });
 	        if (!authorize.is_virtual) ChampionSocket.send({ get_self_exclusion: 1 });
 	        var country_code = response.authorize.country;
 	        if (country_code) {
@@ -18878,6 +18879,10 @@
 	        return true;
 	    };
 	
+	    var getMT5AccountType = function getMT5AccountType(group) {
+	        return group ? /demo/.test(group) ? 'demo' : group.split('\\')[1] || '' : '';
+	    };
+	
 	    return {
 	        init: init,
 	        redirect_if_login: redirect_if_login,
@@ -18897,7 +18902,8 @@
 	        has_real: function has_real() {
 	            return get('has_real');
 	        },
-	        do_logout: do_logout
+	        do_logout: do_logout,
+	        getMT5AccountType: getMT5AccountType
 	    };
 	}();
 	
@@ -34903,7 +34909,7 @@
 	var Client = __webpack_require__(301);
 	var getLanguage = __webpack_require__(415).getLanguage;
 	var Login = __webpack_require__(421);
-	var getAppId = __webpack_require__(413).getAppId;
+	var ChampionSocket = __webpack_require__(413);
 	var State = __webpack_require__(416).State;
 	var Cookies = __webpack_require__(414);
 	
@@ -34911,7 +34917,7 @@
 	    'use strict';
 	
 	    var isGtmApplicable = function isGtmApplicable() {
-	        return (/^(2472|2586)$/.test(getAppId())
+	        return (/^(2472|2586)$/.test(ChampionSocket.getAppId())
 	        );
 	    };
 	
@@ -34982,7 +34988,20 @@
 	            data.bom_lastname = get_settings.last_name;
 	            data.bom_phone = get_settings.phone;
 	        }
-	        pushDataLayer(data);
+	
+	        if (is_login) {
+	            ChampionSocket.wait('mt5_login_list').then(function (response) {
+	                (response.mt5_login_list || []).forEach(function (obj) {
+	                    var acc_type = Client.getMT5AccountType(obj.group);
+	                    if (acc_type) {
+	                        data['mt5_' + acc_type.replace('champion_', '') + '_id'] = obj.login;
+	                    }
+	                });
+	                pushDataLayer(data);
+	            });
+	        } else {
+	            pushDataLayer(data);
+	        }
 	    };
 	
 	    return {
@@ -37089,6 +37108,7 @@
 	
 	var MetaTraderConfig = __webpack_require__(444);
 	var MetaTraderUI = __webpack_require__(445);
+	var Client = __webpack_require__(301);
 	var ChampionSocket = __webpack_require__(413);
 	var Validation = __webpack_require__(431);
 	
@@ -37100,23 +37120,21 @@
 	    var fields = MetaTraderConfig.fields;
 	
 	    var load = function load() {
-	        ChampionSocket.send({ mt5_login_list: 1 }).then(function (response) {
+	        ChampionSocket.wait('mt5_login_list').then(function (response) {
 	            responseLoginList(response);
 	        });
 	        MetaTraderUI.init(submit);
 	    };
 	
 	    var responseLoginList = function responseLoginList(response) {
-	        if (response.mt5_login_list && response.mt5_login_list.length > 0) {
-	            response.mt5_login_list.map(function (obj) {
-	                var acc_type = getAccountType(obj.group);
-	                if (acc_type) {
-	                    // ignore old accounts which are not linked to any group
-	                    types_info[acc_type].account_info = { login: obj.login };
-	                    getAccountDetails(obj.login, acc_type);
-	                }
-	            });
-	        }
+	        (response.mt5_login_list || []).forEach(function (obj) {
+	            var acc_type = Client.getMT5AccountType(obj.group);
+	            if (acc_type) {
+	                // ignore old accounts which are not linked to any group
+	                types_info[acc_type].account_info = { login: obj.login };
+	                getAccountDetails(obj.login, acc_type);
+	            }
+	        });
 	
 	        // Update types with no account
 	        Object.keys(types_info).forEach(function (acc_type) {
@@ -37137,10 +37155,6 @@
 	                MetaTraderUI.updateAccount(acc_type);
 	            }
 	        });
-	    };
-	
-	    var getAccountType = function getAccountType(group) {
-	        return group ? /demo/.test(group) ? 'demo' : group.split('\\')[1] || '' : '';
 	    };
 	
 	    var makeRequestObject = function makeRequestObject(acc_type, action) {
@@ -37265,12 +37279,14 @@
 	                });
 	            },
 	            onSuccess: function onSuccess(response, acc_type) {
+	                var type = types_info[acc_type].mt5_account_type || 'demo';
 	                var gtm_data = {
 	                    event: 'mt5_new_account',
 	                    bom_email: Client.get('email'),
-	                    bom_country: State.get(['response', 'get_settings', 'get_settings', 'country'])
+	                    bom_country: State.get(['response', 'get_settings', 'get_settings', 'country']),
+	                    mt5_last_signup: type
 	                };
-	                gtm_data['mt5_' + (types_info[acc_type].mt5_account_type || 'demo') + '_id'] = response.mt5_new_account.login;
+	                gtm_data['mt5_' + type + '_id'] = response.mt5_new_account.login;
 	                if (acc_type === 'demo' && !Client.is_virtual()) {
 	                    gtm_data.visitorId = Client.get('loginid_array').find(function (login) {
 	                        return !login.real;
