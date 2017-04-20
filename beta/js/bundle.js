@@ -42,7 +42,7 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -57,22 +57,22 @@
 	
 	$(window).on('load', Champion.init);
 
-/***/ }),
+/***/ },
 /* 1 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
-	 * jQuery JavaScript Library v3.2.1
+	 * jQuery JavaScript Library v3.1.1
 	 * https://jquery.com/
 	 *
 	 * Includes Sizzle.js
 	 * https://sizzlejs.com/
 	 *
-	 * Copyright JS Foundation and other contributors
+	 * Copyright jQuery Foundation and other contributors
 	 * Released under the MIT license
 	 * https://jquery.org/license
 	 *
-	 * Date: 2017-03-20T18:59Z
+	 * Date: 2016-09-22T22:30Z
 	 */
 	( function( global, factory ) {
 	
@@ -151,7 +151,7 @@
 	
 	
 	var
-		version = "3.2.1",
+		version = "3.1.1",
 	
 		// Define a local copy of jQuery
 		jQuery = function( selector, context ) {
@@ -299,11 +299,11 @@
 	
 					// Recurse if we're merging plain objects or arrays
 					if ( deep && copy && ( jQuery.isPlainObject( copy ) ||
-						( copyIsArray = Array.isArray( copy ) ) ) ) {
+						( copyIsArray = jQuery.isArray( copy ) ) ) ) {
 	
 						if ( copyIsArray ) {
 							copyIsArray = false;
-							clone = src && Array.isArray( src ) ? src : [];
+							clone = src && jQuery.isArray( src ) ? src : [];
 	
 						} else {
 							clone = src && jQuery.isPlainObject( src ) ? src : {};
@@ -341,6 +341,8 @@
 		isFunction: function( obj ) {
 			return jQuery.type( obj ) === "function";
 		},
+	
+		isArray: Array.isArray,
 	
 		isWindow: function( obj ) {
 			return obj != null && obj === obj.window;
@@ -414,6 +416,10 @@
 		// Microsoft forgot to hump their vendor prefix (#9572)
 		camelCase: function( string ) {
 			return string.replace( rmsPrefix, "ms-" ).replace( rdashAlpha, fcamelCase );
+		},
+	
+		nodeName: function( elem, name ) {
+			return elem.nodeName && elem.nodeName.toLowerCase() === name.toLowerCase();
 		},
 	
 		each: function( obj, callback ) {
@@ -2900,13 +2906,6 @@
 	
 	var rneedsContext = jQuery.expr.match.needsContext;
 	
-	
-	
-	function nodeName( elem, name ) {
-	
-	  return elem.nodeName && elem.nodeName.toLowerCase() === name.toLowerCase();
-	
-	};
 	var rsingleTag = ( /^<([a-z][^\/\0>:\x20\t\r\n\f]*)[\x20\t\r\n\f]*\/?>(?:<\/\1>|)$/i );
 	
 	
@@ -3258,18 +3257,7 @@
 			return siblings( elem.firstChild );
 		},
 		contents: function( elem ) {
-	        if ( nodeName( elem, "iframe" ) ) {
-	            return elem.contentDocument;
-	        }
-	
-	        // Support: IE 9 - 11 only, iOS 7 only, Android Browser <=4.3 only
-	        // Treat the template element as a regular one in browsers that
-	        // don't support it.
-	        if ( nodeName( elem, "template" ) ) {
-	            elem = elem.content || elem;
-	        }
-	
-	        return jQuery.merge( [], elem.childNodes );
+			return elem.contentDocument || jQuery.merge( [], elem.childNodes );
 		}
 	}, function( name, fn ) {
 		jQuery.fn[ name ] = function( until, selector ) {
@@ -3367,7 +3355,7 @@
 			fire = function() {
 	
 				// Enforce single-firing
-				locked = locked || options.once;
+				locked = options.once;
 	
 				// Execute callbacks for all pending executions,
 				// respecting firingIndex overrides and runtime changes
@@ -3536,7 +3524,7 @@
 		throw ex;
 	}
 	
-	function adoptValue( value, resolve, reject, noValue ) {
+	function adoptValue( value, resolve, reject ) {
 		var method;
 	
 		try {
@@ -3552,10 +3540,9 @@
 			// Other non-thenables
 			} else {
 	
-				// Control `resolve` arguments by letting Array#slice cast boolean `noValue` to integer:
-				// * false: [ value ].slice( 0 ) => resolve( value )
-				// * true: [ value ].slice( 1 ) => resolve()
-				resolve.apply( undefined, [ value ].slice( noValue ) );
+				// Support: Android 4.0 only
+				// Strict mode functions invoked without .call/.apply get global-object context
+				resolve.call( undefined, value );
 			}
 	
 		// For Promises/A+, convert exceptions into rejections
@@ -3565,7 +3552,7 @@
 	
 			// Support: Android 4.0 only
 			// Strict mode functions invoked without .call/.apply get global-object context
-			reject.apply( undefined, [ value ] );
+			reject.call( undefined, value );
 		}
 	}
 	
@@ -3890,8 +3877,7 @@
 	
 			// Single- and empty arguments are adopted like Promise.resolve
 			if ( remaining <= 1 ) {
-				adoptValue( singleValue, master.done( updateFunc( i ) ).resolve, master.reject,
-					!remaining );
+				adoptValue( singleValue, master.done( updateFunc( i ) ).resolve, master.reject );
 	
 				// Use .then() to unwrap secondary thenables (cf. gh-3000)
 				if ( master.state() === "pending" ||
@@ -3962,6 +3948,15 @@
 		// A counter to track how many items to wait for before
 		// the ready event fires. See #6781
 		readyWait: 1,
+	
+		// Hold (or release) the ready event
+		holdReady: function( hold ) {
+			if ( hold ) {
+				jQuery.readyWait++;
+			} else {
+				jQuery.ready( true );
+			}
+		},
 	
 		// Handle when the DOM is ready
 		ready: function( wait ) {
@@ -4198,7 +4193,7 @@
 			if ( key !== undefined ) {
 	
 				// Support array or space separated string of keys
-				if ( Array.isArray( key ) ) {
+				if ( jQuery.isArray( key ) ) {
 	
 					// If key is an array of keys...
 					// We always set camelCase keys, so remove that.
@@ -4424,7 +4419,7 @@
 	
 				// Speed up dequeue by getting out quickly if this is just a lookup
 				if ( data ) {
-					if ( !queue || Array.isArray( data ) ) {
+					if ( !queue || jQuery.isArray( data ) ) {
 						queue = dataPriv.access( elem, type, jQuery.makeArray( data ) );
 					} else {
 						queue.push( data );
@@ -4801,7 +4796,7 @@
 			ret = [];
 		}
 	
-		if ( tag === undefined || tag && nodeName( context, tag ) ) {
+		if ( tag === undefined || tag && jQuery.nodeName( context, tag ) ) {
 			return jQuery.merge( [ context ], ret );
 		}
 	
@@ -5408,7 +5403,7 @@
 	
 				// For checkbox, fire native event so checked state will be right
 				trigger: function() {
-					if ( this.type === "checkbox" && this.click && nodeName( this, "input" ) ) {
+					if ( this.type === "checkbox" && this.click && jQuery.nodeName( this, "input" ) ) {
 						this.click();
 						return false;
 					}
@@ -5416,7 +5411,7 @@
 	
 				// For cross-browser consistency, don't fire native .click() on links
 				_default: function( event ) {
-					return nodeName( event.target, "a" );
+					return jQuery.nodeName( event.target, "a" );
 				}
 			},
 	
@@ -5693,12 +5688,11 @@
 		rscriptTypeMasked = /^true\/(.*)/,
 		rcleanScript = /^\s*<!(?:\[CDATA\[|--)|(?:\]\]|--)>\s*$/g;
 	
-	// Prefer a tbody over its parent table for containing new rows
 	function manipulationTarget( elem, content ) {
-		if ( nodeName( elem, "table" ) &&
-			nodeName( content.nodeType !== 11 ? content : content.firstChild, "tr" ) ) {
+		if ( jQuery.nodeName( elem, "table" ) &&
+			jQuery.nodeName( content.nodeType !== 11 ? content : content.firstChild, "tr" ) ) {
 	
-			return jQuery( ">tbody", elem )[ 0 ] || elem;
+			return elem.getElementsByTagName( "tbody" )[ 0 ] || elem;
 		}
 	
 		return elem;
@@ -6228,18 +6222,12 @@
 	
 	function curCSS( elem, name, computed ) {
 		var width, minWidth, maxWidth, ret,
-	
-			// Support: Firefox 51+
-			// Retrieving style before computed somehow
-			// fixes an issue with getting wrong values
-			// on detached elements
 			style = elem.style;
 	
 		computed = computed || getStyles( elem );
 	
-		// getPropertyValue is needed for:
-		//   .css('filter') (IE 9 only, #12537)
-		//   .css('--customProperty) (#3144)
+		// Support: IE <=9 only
+		// getPropertyValue is only needed for .css('filter') (#12537)
 		if ( computed ) {
 			ret = computed.getPropertyValue( name ) || computed[ name ];
 	
@@ -6305,7 +6293,6 @@
 		// except "table", "table-cell", or "table-caption"
 		// See here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
 		rdisplayswap = /^(none|table(?!-c[ea]).+)/,
-		rcustomProp = /^--/,
 		cssShow = { position: "absolute", visibility: "hidden", display: "block" },
 		cssNormalTransform = {
 			letterSpacing: "0",
@@ -6333,16 +6320,6 @@
 				return name;
 			}
 		}
-	}
-	
-	// Return a property mapped along what jQuery.cssProps suggests or to
-	// a vendor prefixed property.
-	function finalPropName( name ) {
-		var ret = jQuery.cssProps[ name ];
-		if ( !ret ) {
-			ret = jQuery.cssProps[ name ] = vendorPropName( name ) || name;
-		}
-		return ret;
 	}
 	
 	function setPositiveNumber( elem, value, subtract ) {
@@ -6405,30 +6382,43 @@
 	
 	function getWidthOrHeight( elem, name, extra ) {
 	
-		// Start with computed style
-		var valueIsBorderBox,
+		// Start with offset property, which is equivalent to the border-box value
+		var val,
+			valueIsBorderBox = true,
 			styles = getStyles( elem ),
-			val = curCSS( elem, name, styles ),
 			isBorderBox = jQuery.css( elem, "boxSizing", false, styles ) === "border-box";
 	
-		// Computed unit is not pixels. Stop here and return.
-		if ( rnumnonpx.test( val ) ) {
-			return val;
+		// Support: IE <=11 only
+		// Running getBoundingClientRect on a disconnected node
+		// in IE throws an error.
+		if ( elem.getClientRects().length ) {
+			val = elem.getBoundingClientRect()[ name ];
 		}
 	
-		// Check for style in case a browser which returns unreliable values
-		// for getComputedStyle silently falls back to the reliable elem.style
-		valueIsBorderBox = isBorderBox &&
-			( support.boxSizingReliable() || val === elem.style[ name ] );
+		// Some non-html elements return undefined for offsetWidth, so check for null/undefined
+		// svg - https://bugzilla.mozilla.org/show_bug.cgi?id=649285
+		// MathML - https://bugzilla.mozilla.org/show_bug.cgi?id=491668
+		if ( val <= 0 || val == null ) {
 	
-		// Fall back to offsetWidth/Height when value is "auto"
-		// This happens for inline elements with no explicit setting (gh-3571)
-		if ( val === "auto" ) {
-			val = elem[ "offset" + name[ 0 ].toUpperCase() + name.slice( 1 ) ];
+			// Fall back to computed then uncomputed css if necessary
+			val = curCSS( elem, name, styles );
+			if ( val < 0 || val == null ) {
+				val = elem.style[ name ];
+			}
+	
+			// Computed unit is not pixels. Stop here and return.
+			if ( rnumnonpx.test( val ) ) {
+				return val;
+			}
+	
+			// Check for style in case a browser which returns unreliable values
+			// for getComputedStyle silently falls back to the reliable elem.style
+			valueIsBorderBox = isBorderBox &&
+				( support.boxSizingReliable() || val === elem.style[ name ] );
+	
+			// Normalize "", auto, and prepare for extra
+			val = parseFloat( val ) || 0;
 		}
-	
-		// Normalize "", auto, and prepare for extra
-		val = parseFloat( val ) || 0;
 	
 		// Use the active box-sizing model to add/subtract irrelevant styles
 		return ( val +
@@ -6493,15 +6483,10 @@
 			// Make sure that we're working with the right name
 			var ret, type, hooks,
 				origName = jQuery.camelCase( name ),
-				isCustomProp = rcustomProp.test( name ),
 				style = elem.style;
 	
-			// Make sure that we're working with the right name. We don't
-			// want to query the value if it is a CSS custom property
-			// since they are user-defined.
-			if ( !isCustomProp ) {
-				name = finalPropName( origName );
-			}
+			name = jQuery.cssProps[ origName ] ||
+				( jQuery.cssProps[ origName ] = vendorPropName( origName ) || origName );
 	
 			// Gets hook for the prefixed version, then unprefixed version
 			hooks = jQuery.cssHooks[ name ] || jQuery.cssHooks[ origName ];
@@ -6537,11 +6522,7 @@
 				if ( !hooks || !( "set" in hooks ) ||
 					( value = hooks.set( elem, value, extra ) ) !== undefined ) {
 	
-					if ( isCustomProp ) {
-						style.setProperty( name, value );
-					} else {
-						style[ name ] = value;
-					}
+					style[ name ] = value;
 				}
 	
 			} else {
@@ -6560,15 +6541,11 @@
 	
 		css: function( elem, name, extra, styles ) {
 			var val, num, hooks,
-				origName = jQuery.camelCase( name ),
-				isCustomProp = rcustomProp.test( name );
+				origName = jQuery.camelCase( name );
 	
-			// Make sure that we're working with the right name. We don't
-			// want to modify the value if it is a CSS custom property
-			// since they are user-defined.
-			if ( !isCustomProp ) {
-				name = finalPropName( origName );
-			}
+			// Make sure that we're working with the right name
+			name = jQuery.cssProps[ origName ] ||
+				( jQuery.cssProps[ origName ] = vendorPropName( origName ) || origName );
 	
 			// Try prefixed name followed by the unprefixed name
 			hooks = jQuery.cssHooks[ name ] || jQuery.cssHooks[ origName ];
@@ -6593,7 +6570,6 @@
 				num = parseFloat( val );
 				return extra === true || isFinite( num ) ? num || 0 : val;
 			}
-	
 			return val;
 		}
 	} );
@@ -6693,7 +6669,7 @@
 					map = {},
 					i = 0;
 	
-				if ( Array.isArray( name ) ) {
+				if ( jQuery.isArray( name ) ) {
 					styles = getStyles( elem );
 					len = name.length;
 	
@@ -6831,18 +6807,13 @@
 	
 	
 	var
-		fxNow, inProgress,
+		fxNow, timerId,
 		rfxtypes = /^(?:toggle|show|hide)$/,
 		rrun = /queueHooks$/;
 	
-	function schedule() {
-		if ( inProgress ) {
-			if ( document.hidden === false && window.requestAnimationFrame ) {
-				window.requestAnimationFrame( schedule );
-			} else {
-				window.setTimeout( schedule, jQuery.fx.interval );
-			}
-	
+	function raf() {
+		if ( timerId ) {
+			window.requestAnimationFrame( raf );
 			jQuery.fx.tick();
 		}
 	}
@@ -7069,7 +7040,7 @@
 			name = jQuery.camelCase( index );
 			easing = specialEasing[ name ];
 			value = props[ index ];
-			if ( Array.isArray( value ) ) {
+			if ( jQuery.isArray( value ) ) {
 				easing = value[ 1 ];
 				value = props[ index ] = value[ 0 ];
 			}
@@ -7128,19 +7099,12 @@
 	
 				deferred.notifyWith( elem, [ animation, percent, remaining ] );
 	
-				// If there's more to do, yield
 				if ( percent < 1 && length ) {
 					return remaining;
+				} else {
+					deferred.resolveWith( elem, [ animation ] );
+					return false;
 				}
-	
-				// If this was an empty animation, synthesize a final progress notification
-				if ( !length ) {
-					deferred.notifyWith( elem, [ animation, 1, 0 ] );
-				}
-	
-				// Resolve the animation and report its conclusion
-				deferred.resolveWith( elem, [ animation ] );
-				return false;
 			},
 			animation = deferred.promise( {
 				elem: elem,
@@ -7205,13 +7169,6 @@
 			animation.opts.start.call( elem, animation );
 		}
 	
-		// Attach callbacks from options
-		animation
-			.progress( animation.opts.progress )
-			.done( animation.opts.done, animation.opts.complete )
-			.fail( animation.opts.fail )
-			.always( animation.opts.always );
-	
 		jQuery.fx.timer(
 			jQuery.extend( tick, {
 				elem: elem,
@@ -7220,7 +7177,11 @@
 			} )
 		);
 	
-		return animation;
+		// attach callbacks from options
+		return animation.progress( animation.opts.progress )
+			.done( animation.opts.done, animation.opts.complete )
+			.fail( animation.opts.fail )
+			.always( animation.opts.always );
 	}
 	
 	jQuery.Animation = jQuery.extend( Animation, {
@@ -7271,8 +7232,8 @@
 			easing: fn && easing || easing && !jQuery.isFunction( easing ) && easing
 		};
 	
-		// Go to the end state if fx are off
-		if ( jQuery.fx.off ) {
+		// Go to the end state if fx are off or if document is hidden
+		if ( jQuery.fx.off || document.hidden ) {
 			opt.duration = 0;
 	
 		} else {
@@ -7464,7 +7425,7 @@
 		for ( ; i < timers.length; i++ ) {
 			timer = timers[ i ];
 	
-			// Run the timer and safely remove it when done (allowing for external removal)
+			// Checks the timer has not already been removed
 			if ( !timer() && timers[ i ] === timer ) {
 				timers.splice( i--, 1 );
 			}
@@ -7478,21 +7439,30 @@
 	
 	jQuery.fx.timer = function( timer ) {
 		jQuery.timers.push( timer );
-		jQuery.fx.start();
+		if ( timer() ) {
+			jQuery.fx.start();
+		} else {
+			jQuery.timers.pop();
+		}
 	};
 	
 	jQuery.fx.interval = 13;
 	jQuery.fx.start = function() {
-		if ( inProgress ) {
-			return;
+		if ( !timerId ) {
+			timerId = window.requestAnimationFrame ?
+				window.requestAnimationFrame( raf ) :
+				window.setInterval( jQuery.fx.tick, jQuery.fx.interval );
 		}
-	
-		inProgress = true;
-		schedule();
 	};
 	
 	jQuery.fx.stop = function() {
-		inProgress = null;
+		if ( window.cancelAnimationFrame ) {
+			window.cancelAnimationFrame( timerId );
+		} else {
+			window.clearInterval( timerId );
+		}
+	
+		timerId = null;
 	};
 	
 	jQuery.fx.speeds = {
@@ -7609,7 +7579,7 @@
 			type: {
 				set: function( elem, value ) {
 					if ( !support.radioValue && value === "radio" &&
-						nodeName( elem, "input" ) ) {
+						jQuery.nodeName( elem, "input" ) ) {
 						var val = elem.value;
 						elem.setAttribute( "type", value );
 						if ( val ) {
@@ -8040,7 +8010,7 @@
 				} else if ( typeof val === "number" ) {
 					val += "";
 	
-				} else if ( Array.isArray( val ) ) {
+				} else if ( jQuery.isArray( val ) ) {
 					val = jQuery.map( val, function( value ) {
 						return value == null ? "" : value + "";
 					} );
@@ -8099,7 +8069,7 @@
 								// Don't return options that are disabled or in a disabled optgroup
 								!option.disabled &&
 								( !option.parentNode.disabled ||
-									!nodeName( option.parentNode, "optgroup" ) ) ) {
+									!jQuery.nodeName( option.parentNode, "optgroup" ) ) ) {
 	
 							// Get the specific value for the option
 							value = jQuery( option ).val();
@@ -8151,7 +8121,7 @@
 	jQuery.each( [ "radio", "checkbox" ], function() {
 		jQuery.valHooks[ this ] = {
 			set: function( elem, value ) {
-				if ( Array.isArray( value ) ) {
+				if ( jQuery.isArray( value ) ) {
 					return ( elem.checked = jQuery.inArray( jQuery( elem ).val(), value ) > -1 );
 				}
 			}
@@ -8446,7 +8416,7 @@
 	function buildParams( prefix, obj, traditional, add ) {
 		var name;
 	
-		if ( Array.isArray( obj ) ) {
+		if ( jQuery.isArray( obj ) ) {
 	
 			// Serialize array item.
 			jQuery.each( obj, function( i, v ) {
@@ -8498,7 +8468,7 @@
 			};
 	
 		// If an array was passed in, assume that it is an array of form elements.
-		if ( Array.isArray( a ) || ( a.jquery && !jQuery.isPlainObject( a ) ) ) {
+		if ( jQuery.isArray( a ) || ( a.jquery && !jQuery.isPlainObject( a ) ) ) {
 	
 			// Serialize the form elements
 			jQuery.each( a, function() {
@@ -8544,7 +8514,7 @@
 					return null;
 				}
 	
-				if ( Array.isArray( val ) ) {
+				if ( jQuery.isArray( val ) ) {
 					return jQuery.map( val, function( val ) {
 						return { name: elem.name, value: val.replace( rCRLF, "\r\n" ) };
 					} );
@@ -9969,6 +9939,13 @@
 	
 	
 	
+	/**
+	 * Gets a window from an element
+	 */
+	function getWindow( elem ) {
+		return jQuery.isWindow( elem ) ? elem : elem.nodeType === 9 && elem.defaultView;
+	}
+	
 	jQuery.offset = {
 		setOffset: function( elem, options, i ) {
 			var curPosition, curLeft, curCSSTop, curTop, curOffset, curCSSLeft, calculatePosition,
@@ -10033,14 +10010,13 @@
 					} );
 			}
 	
-			var doc, docElem, rect, win,
+			var docElem, win, rect, doc,
 				elem = this[ 0 ];
 	
 			if ( !elem ) {
 				return;
 			}
 	
-			// Return zeros for disconnected and hidden (display: none) elements (gh-2310)
 			// Support: IE <=11 only
 			// Running getBoundingClientRect on a
 			// disconnected node in IE throws an error
@@ -10050,14 +10026,20 @@
 	
 			rect = elem.getBoundingClientRect();
 	
-			doc = elem.ownerDocument;
-			docElem = doc.documentElement;
-			win = doc.defaultView;
+			// Make sure element is not hidden (display: none)
+			if ( rect.width || rect.height ) {
+				doc = elem.ownerDocument;
+				win = getWindow( doc );
+				docElem = doc.documentElement;
 	
-			return {
-				top: rect.top + win.pageYOffset - docElem.clientTop,
-				left: rect.left + win.pageXOffset - docElem.clientLeft
-			};
+				return {
+					top: rect.top + win.pageYOffset - docElem.clientTop,
+					left: rect.left + win.pageXOffset - docElem.clientLeft
+				};
+			}
+	
+			// Return zeros for disconnected and hidden elements (gh-2310)
+			return rect;
 		},
 	
 		position: function() {
@@ -10083,7 +10065,7 @@
 	
 				// Get correct offsets
 				offset = this.offset();
-				if ( !nodeName( offsetParent[ 0 ], "html" ) ) {
+				if ( !jQuery.nodeName( offsetParent[ 0 ], "html" ) ) {
 					parentOffset = offsetParent.offset();
 				}
 	
@@ -10130,14 +10112,7 @@
 	
 		jQuery.fn[ method ] = function( val ) {
 			return access( this, function( elem, method, val ) {
-	
-				// Coalesce documents and windows
-				var win;
-				if ( jQuery.isWindow( elem ) ) {
-					win = elem;
-				} else if ( elem.nodeType === 9 ) {
-					win = elem.defaultView;
-				}
+				var win = getWindow( elem );
 	
 				if ( val === undefined ) {
 					return win ? win[ prop ] : elem[ method ];
@@ -10246,16 +10221,7 @@
 		}
 	} );
 	
-	jQuery.holdReady = function( hold ) {
-		if ( hold ) {
-			jQuery.readyWait++;
-		} else {
-			jQuery.ready( true );
-		}
-	};
-	jQuery.isArray = Array.isArray;
 	jQuery.parseJSON = JSON.parse;
-	jQuery.nodeName = nodeName;
 	
 	
 	
@@ -10312,13 +10278,14 @@
 	
 	
 	
+	
 	return jQuery;
 	} );
 
 
-/***/ }),
+/***/ },
 /* 2 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {"use strict";
 	
@@ -10350,9 +10317,9 @@
 	});
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
-/***/ }),
+/***/ },
 /* 3 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(4);
 	__webpack_require__(53);
@@ -10531,9 +10498,9 @@
 	__webpack_require__(293);
 	module.exports = __webpack_require__(10);
 
-/***/ }),
+/***/ },
 /* 4 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// ECMAScript 6 symbols shim
@@ -10771,36 +10738,36 @@
 	// 24.3.3 JSON[@@toStringTag]
 	setToStringTag(global.JSON, 'JSON', true);
 
-/***/ }),
+/***/ },
 /* 5 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	// https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
 	var global = module.exports = typeof window != 'undefined' && window.Math == Math
 	  ? window : typeof self != 'undefined' && self.Math == Math ? self : Function('return this')();
 	if(typeof __g == 'number')__g = global; // eslint-disable-line no-undef
 
-/***/ }),
+/***/ },
 /* 6 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	var hasOwnProperty = {}.hasOwnProperty;
 	module.exports = function(it, key){
 	  return hasOwnProperty.call(it, key);
 	};
 
-/***/ }),
+/***/ },
 /* 7 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// Thank's IE8 for his funny defineProperty
 	module.exports = !__webpack_require__(8)(function(){
 	  return Object.defineProperty({}, 'a', {get: function(){ return 7; }}).a != 7;
 	});
 
-/***/ }),
+/***/ },
 /* 8 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	module.exports = function(exec){
 	  try {
@@ -10810,9 +10777,9 @@
 	  }
 	};
 
-/***/ }),
+/***/ },
 /* 9 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var global    = __webpack_require__(5)
 	  , core      = __webpack_require__(10)
@@ -10858,16 +10825,16 @@
 	$export.R = 128; // real proto method for `library` 
 	module.exports = $export;
 
-/***/ }),
+/***/ },
 /* 10 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	var core = module.exports = {version: '2.4.0'};
 	if(typeof __e == 'number')__e = core; // eslint-disable-line no-undef
 
-/***/ }),
+/***/ },
 /* 11 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var dP         = __webpack_require__(12)
 	  , createDesc = __webpack_require__(18);
@@ -10878,9 +10845,9 @@
 	  return object;
 	};
 
-/***/ }),
+/***/ },
 /* 12 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var anObject       = __webpack_require__(13)
 	  , IE8_DOM_DEFINE = __webpack_require__(15)
@@ -10899,9 +10866,9 @@
 	  return O;
 	};
 
-/***/ }),
+/***/ },
 /* 13 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var isObject = __webpack_require__(14);
 	module.exports = function(it){
@@ -10909,25 +10876,25 @@
 	  return it;
 	};
 
-/***/ }),
+/***/ },
 /* 14 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	module.exports = function(it){
 	  return typeof it === 'object' ? it !== null : typeof it === 'function';
 	};
 
-/***/ }),
+/***/ },
 /* 15 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	module.exports = !__webpack_require__(7) && !__webpack_require__(8)(function(){
 	  return Object.defineProperty(__webpack_require__(16)('div'), 'a', {get: function(){ return 7; }}).a != 7;
 	});
 
-/***/ }),
+/***/ },
 /* 16 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var isObject = __webpack_require__(14)
 	  , document = __webpack_require__(5).document
@@ -10937,9 +10904,9 @@
 	  return is ? document.createElement(it) : {};
 	};
 
-/***/ }),
+/***/ },
 /* 17 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 7.1.1 ToPrimitive(input [, PreferredType])
 	var isObject = __webpack_require__(14);
@@ -10954,9 +10921,9 @@
 	  throw TypeError("Can't convert object to primitive value");
 	};
 
-/***/ }),
+/***/ },
 /* 18 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	module.exports = function(bitmap, value){
 	  return {
@@ -10967,9 +10934,9 @@
 	  };
 	};
 
-/***/ }),
+/***/ },
 /* 19 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var global    = __webpack_require__(5)
 	  , hide      = __webpack_require__(11)
@@ -11004,9 +10971,9 @@
 	  return typeof this == 'function' && this[SRC] || $toString.call(this);
 	});
 
-/***/ }),
+/***/ },
 /* 20 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	var id = 0
 	  , px = Math.random();
@@ -11014,9 +10981,9 @@
 	  return 'Symbol('.concat(key === undefined ? '' : key, ')_', (++id + px).toString(36));
 	};
 
-/***/ }),
+/***/ },
 /* 21 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// optional / simple context binding
 	var aFunction = __webpack_require__(22);
@@ -11039,18 +11006,18 @@
 	  };
 	};
 
-/***/ }),
+/***/ },
 /* 22 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	module.exports = function(it){
 	  if(typeof it != 'function')throw TypeError(it + ' is not a function!');
 	  return it;
 	};
 
-/***/ }),
+/***/ },
 /* 23 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var META     = __webpack_require__(20)('meta')
 	  , isObject = __webpack_require__(14)
@@ -11106,9 +11073,9 @@
 	  onFreeze: onFreeze
 	};
 
-/***/ }),
+/***/ },
 /* 24 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var global = __webpack_require__(5)
 	  , SHARED = '__core-js_shared__'
@@ -11117,9 +11084,9 @@
 	  return store[key] || (store[key] = {});
 	};
 
-/***/ }),
+/***/ },
 /* 25 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var def = __webpack_require__(12).f
 	  , has = __webpack_require__(6)
@@ -11129,9 +11096,9 @@
 	  if(it && !has(it = stat ? it : it.prototype, TAG))def(it, TAG, {configurable: true, value: tag});
 	};
 
-/***/ }),
+/***/ },
 /* 26 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var store      = __webpack_require__(24)('wks')
 	  , uid        = __webpack_require__(20)
@@ -11145,15 +11112,15 @@
 	
 	$exports.store = store;
 
-/***/ }),
+/***/ },
 /* 27 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	exports.f = __webpack_require__(26);
 
-/***/ }),
+/***/ },
 /* 28 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var global         = __webpack_require__(5)
 	  , core           = __webpack_require__(10)
@@ -11165,15 +11132,15 @@
 	  if(name.charAt(0) != '_' && !(name in $Symbol))defineProperty($Symbol, name, {value: wksExt.f(name)});
 	};
 
-/***/ }),
+/***/ },
 /* 29 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	module.exports = false;
 
-/***/ }),
+/***/ },
 /* 30 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var getKeys   = __webpack_require__(31)
 	  , toIObject = __webpack_require__(33);
@@ -11186,9 +11153,9 @@
 	  while(length > index)if(O[key = keys[index++]] === el)return key;
 	};
 
-/***/ }),
+/***/ },
 /* 31 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.2.14 / 15.2.3.14 Object.keys(O)
 	var $keys       = __webpack_require__(32)
@@ -11198,9 +11165,9 @@
 	  return $keys(O, enumBugKeys);
 	};
 
-/***/ }),
+/***/ },
 /* 32 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var has          = __webpack_require__(6)
 	  , toIObject    = __webpack_require__(33)
@@ -11220,9 +11187,9 @@
 	  return result;
 	};
 
-/***/ }),
+/***/ },
 /* 33 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// to indexed object, toObject with fallback for non-array-like ES3 strings
 	var IObject = __webpack_require__(34)
@@ -11231,9 +11198,9 @@
 	  return IObject(defined(it));
 	};
 
-/***/ }),
+/***/ },
 /* 34 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// fallback for non-array-like ES3 and non-enumerable old V8 strings
 	var cof = __webpack_require__(35);
@@ -11241,9 +11208,9 @@
 	  return cof(it) == 'String' ? it.split('') : Object(it);
 	};
 
-/***/ }),
+/***/ },
 /* 35 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	var toString = {}.toString;
 	
@@ -11251,9 +11218,9 @@
 	  return toString.call(it).slice(8, -1);
 	};
 
-/***/ }),
+/***/ },
 /* 36 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	// 7.2.1 RequireObjectCoercible(argument)
 	module.exports = function(it){
@@ -11261,9 +11228,9 @@
 	  return it;
 	};
 
-/***/ }),
+/***/ },
 /* 37 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// false -> Array#indexOf
 	// true  -> Array#includes
@@ -11287,9 +11254,9 @@
 	  };
 	};
 
-/***/ }),
+/***/ },
 /* 38 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 7.1.15 ToLength
 	var toInteger = __webpack_require__(39)
@@ -11298,9 +11265,9 @@
 	  return it > 0 ? min(toInteger(it), 0x1fffffffffffff) : 0; // pow(2, 53) - 1 == 9007199254740991
 	};
 
-/***/ }),
+/***/ },
 /* 39 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	// 7.1.4 ToInteger
 	var ceil  = Math.ceil
@@ -11309,9 +11276,9 @@
 	  return isNaN(it = +it) ? 0 : (it > 0 ? floor : ceil)(it);
 	};
 
-/***/ }),
+/***/ },
 /* 40 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var toInteger = __webpack_require__(39)
 	  , max       = Math.max
@@ -11321,9 +11288,9 @@
 	  return index < 0 ? max(index + length, 0) : min(index, length);
 	};
 
-/***/ }),
+/***/ },
 /* 41 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var shared = __webpack_require__(24)('keys')
 	  , uid    = __webpack_require__(20);
@@ -11331,18 +11298,18 @@
 	  return shared[key] || (shared[key] = uid(key));
 	};
 
-/***/ }),
+/***/ },
 /* 42 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	// IE 8- don't enum bug keys
 	module.exports = (
 	  'constructor,hasOwnProperty,isPrototypeOf,propertyIsEnumerable,toLocaleString,toString,valueOf'
 	).split(',');
 
-/***/ }),
+/***/ },
 /* 43 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// all enumerable object keys, includes symbols
 	var getKeys = __webpack_require__(31)
@@ -11360,21 +11327,21 @@
 	  } return result;
 	};
 
-/***/ }),
+/***/ },
 /* 44 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	exports.f = Object.getOwnPropertySymbols;
 
-/***/ }),
+/***/ },
 /* 45 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	exports.f = {}.propertyIsEnumerable;
 
-/***/ }),
+/***/ },
 /* 46 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 7.2.2 IsArray(argument)
 	var cof = __webpack_require__(35);
@@ -11382,9 +11349,9 @@
 	  return cof(arg) == 'Array';
 	};
 
-/***/ }),
+/***/ },
 /* 47 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.2.2 / 15.2.3.5 Object.create(O [, Properties])
 	var anObject    = __webpack_require__(13)
@@ -11429,9 +11396,9 @@
 	};
 
 
-/***/ }),
+/***/ },
 /* 48 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var dP       = __webpack_require__(12)
 	  , anObject = __webpack_require__(13)
@@ -11447,15 +11414,15 @@
 	  return O;
 	};
 
-/***/ }),
+/***/ },
 /* 49 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	module.exports = __webpack_require__(5).document && document.documentElement;
 
-/***/ }),
+/***/ },
 /* 50 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// fallback for IE11 buggy Object.getOwnPropertyNames with iframe and window
 	var toIObject = __webpack_require__(33)
@@ -11478,9 +11445,9 @@
 	};
 
 
-/***/ }),
+/***/ },
 /* 51 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.2.7 / 15.2.3.4 Object.getOwnPropertyNames(O)
 	var $keys      = __webpack_require__(32)
@@ -11490,9 +11457,9 @@
 	  return $keys(O, hiddenKeys);
 	};
 
-/***/ }),
+/***/ },
 /* 52 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var pIE            = __webpack_require__(45)
 	  , createDesc     = __webpack_require__(18)
@@ -11511,33 +11478,33 @@
 	  if(has(O, P))return createDesc(!pIE.f.call(O, P), O[P]);
 	};
 
-/***/ }),
+/***/ },
 /* 53 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $export = __webpack_require__(9)
 	// 19.1.2.2 / 15.2.3.5 Object.create(O [, Properties])
 	$export($export.S, 'Object', {create: __webpack_require__(47)});
 
-/***/ }),
+/***/ },
 /* 54 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $export = __webpack_require__(9);
 	// 19.1.2.4 / 15.2.3.6 Object.defineProperty(O, P, Attributes)
 	$export($export.S + $export.F * !__webpack_require__(7), 'Object', {defineProperty: __webpack_require__(12).f});
 
-/***/ }),
+/***/ },
 /* 55 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $export = __webpack_require__(9);
 	// 19.1.2.3 / 15.2.3.7 Object.defineProperties(O, Properties)
 	$export($export.S + $export.F * !__webpack_require__(7), 'Object', {defineProperties: __webpack_require__(48)});
 
-/***/ }),
+/***/ },
 /* 56 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.2.6 Object.getOwnPropertyDescriptor(O, P)
 	var toIObject                 = __webpack_require__(33)
@@ -11549,9 +11516,9 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 57 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// most Object methods by ES6 should accept primitives
 	var $export = __webpack_require__(9)
@@ -11564,9 +11531,9 @@
 	  $export($export.S + $export.F * fails(function(){ fn(1); }), 'Object', exp);
 	};
 
-/***/ }),
+/***/ },
 /* 58 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.2.9 Object.getPrototypeOf(O)
 	var toObject        = __webpack_require__(59)
@@ -11578,9 +11545,9 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 59 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 7.1.13 ToObject(argument)
 	var defined = __webpack_require__(36);
@@ -11588,9 +11555,9 @@
 	  return Object(defined(it));
 	};
 
-/***/ }),
+/***/ },
 /* 60 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.2.9 / 15.2.3.2 Object.getPrototypeOf(O)
 	var has         = __webpack_require__(6)
@@ -11606,9 +11573,9 @@
 	  } return O instanceof Object ? ObjectProto : null;
 	};
 
-/***/ }),
+/***/ },
 /* 61 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.2.14 Object.keys(O)
 	var toObject = __webpack_require__(59)
@@ -11620,18 +11587,18 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 62 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.2.7 Object.getOwnPropertyNames(O)
 	__webpack_require__(57)('getOwnPropertyNames', function(){
 	  return __webpack_require__(50).f;
 	});
 
-/***/ }),
+/***/ },
 /* 63 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.2.5 Object.freeze(O)
 	var isObject = __webpack_require__(14)
@@ -11643,9 +11610,9 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 64 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.2.17 Object.seal(O)
 	var isObject = __webpack_require__(14)
@@ -11657,9 +11624,9 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 65 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.2.15 Object.preventExtensions(O)
 	var isObject = __webpack_require__(14)
@@ -11671,9 +11638,9 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 66 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.2.12 Object.isFrozen(O)
 	var isObject = __webpack_require__(14);
@@ -11684,9 +11651,9 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 67 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.2.13 Object.isSealed(O)
 	var isObject = __webpack_require__(14);
@@ -11697,9 +11664,9 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 68 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.2.11 Object.isExtensible(O)
 	var isObject = __webpack_require__(14);
@@ -11710,18 +11677,18 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 69 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.3.1 Object.assign(target, source)
 	var $export = __webpack_require__(9);
 	
 	$export($export.S + $export.F, 'Object', {assign: __webpack_require__(70)});
 
-/***/ }),
+/***/ },
 /* 70 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// 19.1.2.1 Object.assign(target, source, ...)
@@ -11757,34 +11724,34 @@
 	  } return T;
 	} : $assign;
 
-/***/ }),
+/***/ },
 /* 71 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.3.10 Object.is(value1, value2)
 	var $export = __webpack_require__(9);
 	$export($export.S, 'Object', {is: __webpack_require__(72)});
 
-/***/ }),
+/***/ },
 /* 72 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	// 7.2.9 SameValue(x, y)
 	module.exports = Object.is || function is(x, y){
 	  return x === y ? x !== 0 || 1 / x === 1 / y : x != x && y != y;
 	};
 
-/***/ }),
+/***/ },
 /* 73 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.1.3.19 Object.setPrototypeOf(O, proto)
 	var $export = __webpack_require__(9);
 	$export($export.S, 'Object', {setPrototypeOf: __webpack_require__(74).set});
 
-/***/ }),
+/***/ },
 /* 74 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// Works with __proto__ only. Old v8 can't work with null proto objects.
 	/* eslint-disable no-proto */
@@ -11812,9 +11779,9 @@
 	  check: check
 	};
 
-/***/ }),
+/***/ },
 /* 75 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// 19.1.3.6 Object.prototype.toString()
@@ -11827,9 +11794,9 @@
 	  }, true);
 	}
 
-/***/ }),
+/***/ },
 /* 76 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// getting tag from 19.1.3.6 Object.prototype.toString()
 	var cof = __webpack_require__(35)
@@ -11855,18 +11822,18 @@
 	    : (B = cof(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : B;
 	};
 
-/***/ }),
+/***/ },
 /* 77 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 19.2.3.2 / 15.3.4.5 Function.prototype.bind(thisArg, args...)
 	var $export = __webpack_require__(9);
 	
 	$export($export.P, 'Function', {bind: __webpack_require__(78)});
 
-/***/ }),
+/***/ },
 /* 78 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var aFunction  = __webpack_require__(22)
@@ -11893,9 +11860,9 @@
 	  return bound;
 	};
 
-/***/ }),
+/***/ },
 /* 79 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	// fast apply, http://jsperf.lnkit.com/fast-apply/5
 	module.exports = function(fn, args, that){
@@ -11914,9 +11881,9 @@
 	  } return              fn.apply(that, args);
 	};
 
-/***/ }),
+/***/ },
 /* 80 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var dP         = __webpack_require__(12).f
 	  , createDesc = __webpack_require__(18)
@@ -11944,9 +11911,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 81 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var isObject       = __webpack_require__(14)
@@ -11962,18 +11929,18 @@
 	  return false;
 	}});
 
-/***/ }),
+/***/ },
 /* 82 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $export   = __webpack_require__(9)
 	  , $parseInt = __webpack_require__(83);
 	// 18.2.5 parseInt(string, radix)
 	$export($export.G + $export.F * (parseInt != $parseInt), {parseInt: $parseInt});
 
-/***/ }),
+/***/ },
 /* 83 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $parseInt = __webpack_require__(5).parseInt
 	  , $trim     = __webpack_require__(84).trim
@@ -11985,9 +11952,9 @@
 	  return $parseInt(string, (radix >>> 0) || (hex.test(string) ? 16 : 10));
 	} : $parseInt;
 
-/***/ }),
+/***/ },
 /* 84 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $export = __webpack_require__(9)
 	  , defined = __webpack_require__(36)
@@ -12020,25 +11987,25 @@
 	
 	module.exports = exporter;
 
-/***/ }),
+/***/ },
 /* 85 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	module.exports = '\x09\x0A\x0B\x0C\x0D\x20\xA0\u1680\u180E\u2000\u2001\u2002\u2003' +
 	  '\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u202F\u205F\u3000\u2028\u2029\uFEFF';
 
-/***/ }),
+/***/ },
 /* 86 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $export     = __webpack_require__(9)
 	  , $parseFloat = __webpack_require__(87);
 	// 18.2.4 parseFloat(string)
 	$export($export.G + $export.F * (parseFloat != $parseFloat), {parseFloat: $parseFloat});
 
-/***/ }),
+/***/ },
 /* 87 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $parseFloat = __webpack_require__(5).parseFloat
 	  , $trim       = __webpack_require__(84).trim;
@@ -12049,9 +12016,9 @@
 	  return result === 0 && string.charAt(0) == '-' ? -0 : result;
 	} : $parseFloat;
 
-/***/ }),
+/***/ },
 /* 88 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var global            = __webpack_require__(5)
@@ -12123,9 +12090,9 @@
 	  __webpack_require__(19)(global, NUMBER, $Number);
 	}
 
-/***/ }),
+/***/ },
 /* 89 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var isObject       = __webpack_require__(14)
 	  , setPrototypeOf = __webpack_require__(74).set;
@@ -12136,9 +12103,9 @@
 	  } return that;
 	};
 
-/***/ }),
+/***/ },
 /* 90 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export      = __webpack_require__(9)
@@ -12254,9 +12221,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 91 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var cof = __webpack_require__(35);
 	module.exports = function(it, msg){
@@ -12264,9 +12231,9 @@
 	  return +it;
 	};
 
-/***/ }),
+/***/ },
 /* 92 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var toInteger = __webpack_require__(39)
@@ -12281,9 +12248,9 @@
 	  return res;
 	};
 
-/***/ }),
+/***/ },
 /* 93 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export      = __webpack_require__(9)
@@ -12304,18 +12271,18 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 94 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.1.2.1 Number.EPSILON
 	var $export = __webpack_require__(9);
 	
 	$export($export.S, 'Number', {EPSILON: Math.pow(2, -52)});
 
-/***/ }),
+/***/ },
 /* 95 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.1.2.2 Number.isFinite(number)
 	var $export   = __webpack_require__(9)
@@ -12327,18 +12294,18 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 96 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.1.2.3 Number.isInteger(number)
 	var $export = __webpack_require__(9);
 	
 	$export($export.S, 'Number', {isInteger: __webpack_require__(97)});
 
-/***/ }),
+/***/ },
 /* 97 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.1.2.3 Number.isInteger(number)
 	var isObject = __webpack_require__(14)
@@ -12347,9 +12314,9 @@
 	  return !isObject(it) && isFinite(it) && floor(it) === it;
 	};
 
-/***/ }),
+/***/ },
 /* 98 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.1.2.4 Number.isNaN(number)
 	var $export = __webpack_require__(9);
@@ -12360,9 +12327,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 99 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.1.2.5 Number.isSafeInteger(number)
 	var $export   = __webpack_require__(9)
@@ -12375,45 +12342,45 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 100 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.1.2.6 Number.MAX_SAFE_INTEGER
 	var $export = __webpack_require__(9);
 	
 	$export($export.S, 'Number', {MAX_SAFE_INTEGER: 0x1fffffffffffff});
 
-/***/ }),
+/***/ },
 /* 101 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.1.2.10 Number.MIN_SAFE_INTEGER
 	var $export = __webpack_require__(9);
 	
 	$export($export.S, 'Number', {MIN_SAFE_INTEGER: -0x1fffffffffffff});
 
-/***/ }),
+/***/ },
 /* 102 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $export     = __webpack_require__(9)
 	  , $parseFloat = __webpack_require__(87);
 	// 20.1.2.12 Number.parseFloat(string)
 	$export($export.S + $export.F * (Number.parseFloat != $parseFloat), 'Number', {parseFloat: $parseFloat});
 
-/***/ }),
+/***/ },
 /* 103 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $export   = __webpack_require__(9)
 	  , $parseInt = __webpack_require__(83);
 	// 20.1.2.13 Number.parseInt(string, radix)
 	$export($export.S + $export.F * (Number.parseInt != $parseInt), 'Number', {parseInt: $parseInt});
 
-/***/ }),
+/***/ },
 /* 104 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.3 Math.acosh(x)
 	var $export = __webpack_require__(9)
@@ -12434,18 +12401,18 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 105 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	// 20.2.2.20 Math.log1p(x)
 	module.exports = Math.log1p || function log1p(x){
 	  return (x = +x) > -1e-8 && x < 1e-8 ? x - x * x / 2 : Math.log(1 + x);
 	};
 
-/***/ }),
+/***/ },
 /* 106 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.5 Math.asinh(x)
 	var $export = __webpack_require__(9)
@@ -12458,9 +12425,9 @@
 	// Tor Browser bug: Math.asinh(0) -> -0 
 	$export($export.S + $export.F * !($asinh && 1 / $asinh(0) > 0), 'Math', {asinh: asinh});
 
-/***/ }),
+/***/ },
 /* 107 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.7 Math.atanh(x)
 	var $export = __webpack_require__(9)
@@ -12473,9 +12440,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 108 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.9 Math.cbrt(x)
 	var $export = __webpack_require__(9)
@@ -12487,18 +12454,18 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 109 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	// 20.2.2.28 Math.sign(x)
 	module.exports = Math.sign || function sign(x){
 	  return (x = +x) == 0 || x != x ? x : x < 0 ? -1 : 1;
 	};
 
-/***/ }),
+/***/ },
 /* 110 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.11 Math.clz32(x)
 	var $export = __webpack_require__(9);
@@ -12509,9 +12476,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 111 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.12 Math.cosh(x)
 	var $export = __webpack_require__(9)
@@ -12523,9 +12490,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 112 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.14 Math.expm1(x)
 	var $export = __webpack_require__(9)
@@ -12533,9 +12500,9 @@
 	
 	$export($export.S + $export.F * ($expm1 != Math.expm1), 'Math', {expm1: $expm1});
 
-/***/ }),
+/***/ },
 /* 113 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	// 20.2.2.14 Math.expm1(x)
 	var $expm1 = Math.expm1;
@@ -12548,9 +12515,9 @@
 	  return (x = +x) == 0 ? x : x > -1e-6 && x < 1e-6 ? x + x * x / 2 : Math.exp(x) - 1;
 	} : $expm1;
 
-/***/ }),
+/***/ },
 /* 114 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.16 Math.fround(x)
 	var $export   = __webpack_require__(9)
@@ -12579,9 +12546,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 115 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.17 Math.hypot([value1[, value2[, … ]]])
 	var $export = __webpack_require__(9)
@@ -12609,9 +12576,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 116 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.18 Math.imul(x, y)
 	var $export = __webpack_require__(9)
@@ -12631,9 +12598,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 117 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.21 Math.log10(x)
 	var $export = __webpack_require__(9);
@@ -12644,18 +12611,18 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 118 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.20 Math.log1p(x)
 	var $export = __webpack_require__(9);
 	
 	$export($export.S, 'Math', {log1p: __webpack_require__(105)});
 
-/***/ }),
+/***/ },
 /* 119 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.22 Math.log2(x)
 	var $export = __webpack_require__(9);
@@ -12666,18 +12633,18 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 120 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.28 Math.sign(x)
 	var $export = __webpack_require__(9);
 	
 	$export($export.S, 'Math', {sign: __webpack_require__(109)});
 
-/***/ }),
+/***/ },
 /* 121 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.30 Math.sinh(x)
 	var $export = __webpack_require__(9)
@@ -12695,9 +12662,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 122 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.33 Math.tanh(x)
 	var $export = __webpack_require__(9)
@@ -12712,9 +12679,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 123 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.2.2.34 Math.trunc(x)
 	var $export = __webpack_require__(9);
@@ -12725,9 +12692,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 124 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $export        = __webpack_require__(9)
 	  , toIndex        = __webpack_require__(40)
@@ -12753,9 +12720,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 125 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $export   = __webpack_require__(9)
 	  , toIObject = __webpack_require__(33)
@@ -12776,9 +12743,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 126 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// 21.1.3.25 String.prototype.trim()
@@ -12788,9 +12755,9 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 127 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $at  = __webpack_require__(128)(true);
@@ -12810,9 +12777,9 @@
 	  return {value: point, done: false};
 	});
 
-/***/ }),
+/***/ },
 /* 128 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var toInteger = __webpack_require__(39)
 	  , defined   = __webpack_require__(36);
@@ -12832,9 +12799,9 @@
 	  };
 	};
 
-/***/ }),
+/***/ },
 /* 129 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var LIBRARY        = __webpack_require__(29)
@@ -12907,15 +12874,15 @@
 	  return methods;
 	};
 
-/***/ }),
+/***/ },
 /* 130 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	module.exports = {};
 
-/***/ }),
+/***/ },
 /* 131 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var create         = __webpack_require__(47)
@@ -12931,9 +12898,9 @@
 	  setToStringTag(Constructor, NAME + ' Iterator');
 	};
 
-/***/ }),
+/***/ },
 /* 132 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export = __webpack_require__(9)
@@ -12945,9 +12912,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 133 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 21.1.3.6 String.prototype.endsWith(searchString [, endPosition])
 	'use strict';
@@ -12970,9 +12937,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 134 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// helper for String#{startsWith, endsWith, includes}
 	var isRegExp = __webpack_require__(135)
@@ -12983,9 +12950,9 @@
 	  return String(defined(that));
 	};
 
-/***/ }),
+/***/ },
 /* 135 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 7.2.8 IsRegExp(argument)
 	var isObject = __webpack_require__(14)
@@ -12996,9 +12963,9 @@
 	  return isObject(it) && ((isRegExp = it[MATCH]) !== undefined ? !!isRegExp : cof(it) == 'RegExp');
 	};
 
-/***/ }),
+/***/ },
 /* 136 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var MATCH = __webpack_require__(26)('match');
 	module.exports = function(KEY){
@@ -13013,9 +12980,9 @@
 	  } return true;
 	};
 
-/***/ }),
+/***/ },
 /* 137 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 21.1.3.7 String.prototype.includes(searchString, position = 0)
 	'use strict';
@@ -13030,9 +12997,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 138 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $export = __webpack_require__(9);
 	
@@ -13041,9 +13008,9 @@
 	  repeat: __webpack_require__(92)
 	});
 
-/***/ }),
+/***/ },
 /* 139 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 21.1.3.18 String.prototype.startsWith(searchString [, position ])
 	'use strict';
@@ -13064,9 +13031,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 140 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// B.2.3.2 String.prototype.anchor(name)
@@ -13076,9 +13043,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 141 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $export = __webpack_require__(9)
 	  , fails   = __webpack_require__(8)
@@ -13100,9 +13067,9 @@
 	  }), 'String', O);
 	};
 
-/***/ }),
+/***/ },
 /* 142 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// B.2.3.3 String.prototype.big()
@@ -13112,9 +13079,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 143 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// B.2.3.4 String.prototype.blink()
@@ -13124,9 +13091,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 144 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// B.2.3.5 String.prototype.bold()
@@ -13136,9 +13103,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 145 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// B.2.3.6 String.prototype.fixed()
@@ -13148,9 +13115,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 146 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// B.2.3.7 String.prototype.fontcolor(color)
@@ -13160,9 +13127,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 147 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// B.2.3.8 String.prototype.fontsize(size)
@@ -13172,9 +13139,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 148 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// B.2.3.9 String.prototype.italics()
@@ -13184,9 +13151,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 149 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// B.2.3.10 String.prototype.link(url)
@@ -13196,9 +13163,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 150 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// B.2.3.11 String.prototype.small()
@@ -13208,9 +13175,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 151 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// B.2.3.12 String.prototype.strike()
@@ -13220,9 +13187,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 152 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// B.2.3.13 String.prototype.sub()
@@ -13232,9 +13199,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 153 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// B.2.3.14 String.prototype.sup()
@@ -13244,18 +13211,18 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 154 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 20.3.3.1 / 15.9.4.4 Date.now()
 	var $export = __webpack_require__(9);
 	
 	$export($export.S, 'Date', {now: function(){ return new Date().getTime(); }});
 
-/***/ }),
+/***/ },
 /* 155 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export     = __webpack_require__(9)
@@ -13272,9 +13239,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 156 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// 20.3.4.36 / 15.9.5.43 Date.prototype.toISOString()
@@ -13305,9 +13272,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 157 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var DateProto    = Date.prototype
 	  , INVALID_DATE = 'Invalid Date'
@@ -13321,18 +13288,18 @@
 	  });
 	}
 
-/***/ }),
+/***/ },
 /* 158 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var TO_PRIMITIVE = __webpack_require__(26)('toPrimitive')
 	  , proto        = Date.prototype;
 	
 	if(!(TO_PRIMITIVE in proto))__webpack_require__(11)(proto, TO_PRIMITIVE, __webpack_require__(159));
 
-/***/ }),
+/***/ },
 /* 159 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var anObject    = __webpack_require__(13)
@@ -13344,18 +13311,18 @@
 	  return toPrimitive(anObject(this), hint != NUMBER);
 	};
 
-/***/ }),
+/***/ },
 /* 160 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 22.1.2.2 / 15.4.3.2 Array.isArray(arg)
 	var $export = __webpack_require__(9);
 	
 	$export($export.S, 'Array', {isArray: __webpack_require__(46)});
 
-/***/ }),
+/***/ },
 /* 161 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var ctx            = __webpack_require__(21)
@@ -13396,9 +13363,9 @@
 	});
 
 
-/***/ }),
+/***/ },
 /* 162 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// call something on iterator step with safe closing on error
 	var anObject = __webpack_require__(13);
@@ -13413,9 +13380,9 @@
 	  }
 	};
 
-/***/ }),
+/***/ },
 /* 163 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// check on default Array iterator
 	var Iterators  = __webpack_require__(130)
@@ -13426,9 +13393,9 @@
 	  return it !== undefined && (Iterators.Array === it || ArrayProto[ITERATOR] === it);
 	};
 
-/***/ }),
+/***/ },
 /* 164 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $defineProperty = __webpack_require__(12)
@@ -13439,9 +13406,9 @@
 	  else object[index] = value;
 	};
 
-/***/ }),
+/***/ },
 /* 165 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var classof   = __webpack_require__(76)
 	  , ITERATOR  = __webpack_require__(26)('iterator')
@@ -13452,9 +13419,9 @@
 	    || Iterators[classof(it)];
 	};
 
-/***/ }),
+/***/ },
 /* 166 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var ITERATOR     = __webpack_require__(26)('iterator')
 	  , SAFE_CLOSING = false;
@@ -13478,9 +13445,9 @@
 	  return safe;
 	};
 
-/***/ }),
+/***/ },
 /* 167 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export        = __webpack_require__(9)
@@ -13502,9 +13469,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 168 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// 22.1.3.13 Array.prototype.join(separator)
@@ -13519,9 +13486,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 169 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var fails = __webpack_require__(8);
 	
@@ -13531,9 +13498,9 @@
 	  });
 	};
 
-/***/ }),
+/***/ },
 /* 170 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export    = __webpack_require__(9)
@@ -13564,9 +13531,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 171 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export   = __webpack_require__(9)
@@ -13592,9 +13559,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 172 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export  = __webpack_require__(9)
@@ -13608,9 +13575,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 173 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 0 -> Array#forEach
 	// 1 -> Array#map
@@ -13657,9 +13624,9 @@
 	  };
 	};
 
-/***/ }),
+/***/ },
 /* 174 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 9.4.2.3 ArraySpeciesCreate(originalArray, length)
 	var speciesConstructor = __webpack_require__(175);
@@ -13668,9 +13635,9 @@
 	  return new (speciesConstructor(original))(length);
 	};
 
-/***/ }),
+/***/ },
 /* 175 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var isObject = __webpack_require__(14)
 	  , isArray  = __webpack_require__(46)
@@ -13689,9 +13656,9 @@
 	  } return C === undefined ? Array : C;
 	};
 
-/***/ }),
+/***/ },
 /* 176 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export = __webpack_require__(9)
@@ -13704,9 +13671,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 177 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export = __webpack_require__(9)
@@ -13719,9 +13686,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 178 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export = __webpack_require__(9)
@@ -13734,9 +13701,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 179 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export = __webpack_require__(9)
@@ -13749,9 +13716,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 180 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export = __webpack_require__(9)
@@ -13764,9 +13731,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 181 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var aFunction = __webpack_require__(22)
 	  , toObject  = __webpack_require__(59)
@@ -13797,9 +13764,9 @@
 	  return memo;
 	};
 
-/***/ }),
+/***/ },
 /* 182 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export = __webpack_require__(9)
@@ -13812,9 +13779,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 183 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export       = __webpack_require__(9)
@@ -13832,9 +13799,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 184 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export       = __webpack_require__(9)
@@ -13859,9 +13826,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 185 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 22.1.3.3 Array.prototype.copyWithin(target, start, end = this.length)
 	var $export = __webpack_require__(9);
@@ -13870,9 +13837,9 @@
 	
 	__webpack_require__(187)('copyWithin');
 
-/***/ }),
+/***/ },
 /* 186 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 22.1.3.3 Array.prototype.copyWithin(target, start, end = this.length)
 	'use strict';
@@ -13901,9 +13868,9 @@
 	  } return O;
 	};
 
-/***/ }),
+/***/ },
 /* 187 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 22.1.3.31 Array.prototype[@@unscopables]
 	var UNSCOPABLES = __webpack_require__(26)('unscopables')
@@ -13913,9 +13880,9 @@
 	  ArrayProto[UNSCOPABLES][key] = true;
 	};
 
-/***/ }),
+/***/ },
 /* 188 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 22.1.3.6 Array.prototype.fill(value, start = 0, end = this.length)
 	var $export = __webpack_require__(9);
@@ -13924,9 +13891,9 @@
 	
 	__webpack_require__(187)('fill');
 
-/***/ }),
+/***/ },
 /* 189 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 22.1.3.6 Array.prototype.fill(value, start = 0, end = this.length)
 	'use strict';
@@ -13944,9 +13911,9 @@
 	  return O;
 	};
 
-/***/ }),
+/***/ },
 /* 190 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// 22.1.3.8 Array.prototype.find(predicate, thisArg = undefined)
@@ -13963,9 +13930,9 @@
 	});
 	__webpack_require__(187)(KEY);
 
-/***/ }),
+/***/ },
 /* 191 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// 22.1.3.9 Array.prototype.findIndex(predicate, thisArg = undefined)
@@ -13982,15 +13949,15 @@
 	});
 	__webpack_require__(187)(KEY);
 
-/***/ }),
+/***/ },
 /* 192 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(193)('Array');
 
-/***/ }),
+/***/ },
 /* 193 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var global      = __webpack_require__(5)
@@ -14006,9 +13973,9 @@
 	  });
 	};
 
-/***/ }),
+/***/ },
 /* 194 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var addToUnscopables = __webpack_require__(187)
@@ -14045,17 +14012,17 @@
 	addToUnscopables('values');
 	addToUnscopables('entries');
 
-/***/ }),
+/***/ },
 /* 195 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	module.exports = function(done, value){
 	  return {value: value, done: !!done};
 	};
 
-/***/ }),
+/***/ },
 /* 196 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var global            = __webpack_require__(5)
 	  , inheritIfRequired = __webpack_require__(89)
@@ -14101,9 +14068,9 @@
 	
 	__webpack_require__(193)('RegExp');
 
-/***/ }),
+/***/ },
 /* 197 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// 21.2.5.3 get RegExp.prototype.flags
@@ -14119,9 +14086,9 @@
 	  return result;
 	};
 
-/***/ }),
+/***/ },
 /* 198 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	__webpack_require__(199);
@@ -14149,9 +14116,9 @@
 	  });
 	}
 
-/***/ }),
+/***/ },
 /* 199 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 21.2.5.3 get RegExp.prototype.flags()
 	if(__webpack_require__(7) && /./g.flags != 'g')__webpack_require__(12).f(RegExp.prototype, 'flags', {
@@ -14159,9 +14126,9 @@
 	  get: __webpack_require__(197)
 	});
 
-/***/ }),
+/***/ },
 /* 200 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// @@match logic
 	__webpack_require__(201)('match', 1, function(defined, MATCH, $match){
@@ -14174,9 +14141,9 @@
 	  }, $match];
 	});
 
-/***/ }),
+/***/ },
 /* 201 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var hide     = __webpack_require__(11)
@@ -14207,9 +14174,9 @@
 	  }
 	};
 
-/***/ }),
+/***/ },
 /* 202 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// @@replace logic
 	__webpack_require__(201)('replace', 2, function(defined, REPLACE, $replace){
@@ -14224,9 +14191,9 @@
 	  }, $replace];
 	});
 
-/***/ }),
+/***/ },
 /* 203 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// @@search logic
 	__webpack_require__(201)('search', 1, function(defined, SEARCH, $search){
@@ -14239,9 +14206,9 @@
 	  }, $search];
 	});
 
-/***/ }),
+/***/ },
 /* 204 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// @@split logic
 	__webpack_require__(201)('split', 2, function(defined, SPLIT, $split){
@@ -14314,9 +14281,9 @@
 	  }, $split];
 	});
 
-/***/ }),
+/***/ },
 /* 205 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var LIBRARY            = __webpack_require__(29)
@@ -14618,9 +14585,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 206 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	module.exports = function(it, Constructor, name, forbiddenField){
 	  if(!(it instanceof Constructor) || (forbiddenField !== undefined && forbiddenField in it)){
@@ -14628,9 +14595,9 @@
 	  } return it;
 	};
 
-/***/ }),
+/***/ },
 /* 207 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var ctx         = __webpack_require__(21)
 	  , call        = __webpack_require__(162)
@@ -14658,9 +14625,9 @@
 	exports.BREAK  = BREAK;
 	exports.RETURN = RETURN;
 
-/***/ }),
+/***/ },
 /* 208 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 7.3.20 SpeciesConstructor(O, defaultConstructor)
 	var anObject  = __webpack_require__(13)
@@ -14671,9 +14638,9 @@
 	  return C === undefined || (S = anObject(C)[SPECIES]) == undefined ? D : aFunction(S);
 	};
 
-/***/ }),
+/***/ },
 /* 209 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var ctx                = __webpack_require__(21)
 	  , invoke             = __webpack_require__(79)
@@ -14751,9 +14718,9 @@
 	  clear: clearTask
 	};
 
-/***/ }),
+/***/ },
 /* 210 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var global    = __webpack_require__(5)
 	  , macrotask = __webpack_require__(209).set
@@ -14824,9 +14791,9 @@
 	  };
 	};
 
-/***/ }),
+/***/ },
 /* 211 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var redefine = __webpack_require__(19);
 	module.exports = function(target, src, safe){
@@ -14834,9 +14801,9 @@
 	  return target;
 	};
 
-/***/ }),
+/***/ },
 /* 212 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var strong = __webpack_require__(213);
@@ -14856,9 +14823,9 @@
 	  }
 	}, strong, true);
 
-/***/ }),
+/***/ },
 /* 213 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var dP          = __webpack_require__(12).f
@@ -15003,9 +14970,9 @@
 	  }
 	};
 
-/***/ }),
+/***/ },
 /* 214 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var global            = __webpack_require__(5)
@@ -15093,9 +15060,9 @@
 	  return C;
 	};
 
-/***/ }),
+/***/ },
 /* 215 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var strong = __webpack_require__(213);
@@ -15110,9 +15077,9 @@
 	  }
 	}, strong);
 
-/***/ }),
+/***/ },
 /* 216 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var each         = __webpack_require__(173)(0)
@@ -15171,9 +15138,9 @@
 	  });
 	}
 
-/***/ }),
+/***/ },
 /* 217 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var redefineAll       = __webpack_require__(211)
@@ -15259,9 +15226,9 @@
 	  ufstore: uncaughtFrozenStore
 	};
 
-/***/ }),
+/***/ },
 /* 218 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var weak = __webpack_require__(217);
@@ -15276,9 +15243,9 @@
 	  }
 	}, weak, false, true);
 
-/***/ }),
+/***/ },
 /* 219 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export      = __webpack_require__(9)
@@ -15327,9 +15294,9 @@
 	
 	__webpack_require__(193)(ARRAY_BUFFER);
 
-/***/ }),
+/***/ },
 /* 220 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var global = __webpack_require__(5)
 	  , hide   = __webpack_require__(11)
@@ -15358,9 +15325,9 @@
 	  VIEW:   VIEW
 	};
 
-/***/ }),
+/***/ },
 /* 221 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var global         = __webpack_require__(5)
@@ -15636,18 +15603,18 @@
 	exports[ARRAY_BUFFER] = $ArrayBuffer;
 	exports[DATA_VIEW] = $DataView;
 
-/***/ }),
+/***/ },
 /* 222 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $export = __webpack_require__(9);
 	$export($export.G + $export.W + $export.F * !__webpack_require__(220).ABV, {
 	  DataView: __webpack_require__(221).DataView
 	});
 
-/***/ }),
+/***/ },
 /* 223 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(224)('Int8', 1, function(init){
 	  return function Int8Array(data, byteOffset, length){
@@ -15655,9 +15622,9 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 224 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	if(__webpack_require__(7)){
@@ -16139,9 +16106,9 @@
 	  };
 	} else module.exports = function(){ /* empty */ };
 
-/***/ }),
+/***/ },
 /* 225 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(224)('Uint8', 1, function(init){
 	  return function Uint8Array(data, byteOffset, length){
@@ -16149,9 +16116,9 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 226 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(224)('Uint8', 1, function(init){
 	  return function Uint8ClampedArray(data, byteOffset, length){
@@ -16159,9 +16126,9 @@
 	  };
 	}, true);
 
-/***/ }),
+/***/ },
 /* 227 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(224)('Int16', 2, function(init){
 	  return function Int16Array(data, byteOffset, length){
@@ -16169,9 +16136,9 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 228 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(224)('Uint16', 2, function(init){
 	  return function Uint16Array(data, byteOffset, length){
@@ -16179,9 +16146,9 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 229 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(224)('Int32', 4, function(init){
 	  return function Int32Array(data, byteOffset, length){
@@ -16189,9 +16156,9 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 230 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(224)('Uint32', 4, function(init){
 	  return function Uint32Array(data, byteOffset, length){
@@ -16199,9 +16166,9 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 231 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(224)('Float32', 4, function(init){
 	  return function Float32Array(data, byteOffset, length){
@@ -16209,9 +16176,9 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 232 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(224)('Float64', 8, function(init){
 	  return function Float64Array(data, byteOffset, length){
@@ -16219,9 +16186,9 @@
 	  };
 	});
 
-/***/ }),
+/***/ },
 /* 233 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 26.1.1 Reflect.apply(target, thisArgument, argumentsList)
 	var $export   = __webpack_require__(9)
@@ -16240,9 +16207,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 234 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 26.1.2 Reflect.construct(target, argumentsList [, newTarget])
 	var $export    = __webpack_require__(9)
@@ -16292,9 +16259,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 235 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 26.1.3 Reflect.defineProperty(target, propertyKey, attributes)
 	var dP          = __webpack_require__(12)
@@ -16319,9 +16286,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 236 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 26.1.4 Reflect.deleteProperty(target, propertyKey)
 	var $export  = __webpack_require__(9)
@@ -16335,9 +16302,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 237 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// 26.1.5 Reflect.enumerate(target)
@@ -16366,9 +16333,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 238 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 26.1.6 Reflect.get(target, propertyKey [, receiver])
 	var gOPD           = __webpack_require__(52)
@@ -16392,9 +16359,9 @@
 	
 	$export($export.S, 'Reflect', {get: get});
 
-/***/ }),
+/***/ },
 /* 239 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 26.1.7 Reflect.getOwnPropertyDescriptor(target, propertyKey)
 	var gOPD     = __webpack_require__(52)
@@ -16407,9 +16374,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 240 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 26.1.8 Reflect.getPrototypeOf(target)
 	var $export  = __webpack_require__(9)
@@ -16422,9 +16389,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 241 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 26.1.9 Reflect.has(target, propertyKey)
 	var $export = __webpack_require__(9);
@@ -16435,9 +16402,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 242 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 26.1.10 Reflect.isExtensible(target)
 	var $export       = __webpack_require__(9)
@@ -16451,18 +16418,18 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 243 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 26.1.11 Reflect.ownKeys(target)
 	var $export = __webpack_require__(9);
 	
 	$export($export.S, 'Reflect', {ownKeys: __webpack_require__(244)});
 
-/***/ }),
+/***/ },
 /* 244 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// all object keys, includes non-enumerable and symbols
 	var gOPN     = __webpack_require__(51)
@@ -16475,9 +16442,9 @@
 	  return getSymbols ? keys.concat(getSymbols(it)) : keys;
 	};
 
-/***/ }),
+/***/ },
 /* 245 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 26.1.12 Reflect.preventExtensions(target)
 	var $export            = __webpack_require__(9)
@@ -16496,9 +16463,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 246 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 26.1.13 Reflect.set(target, propertyKey, V [, receiver])
 	var dP             = __webpack_require__(12)
@@ -16532,9 +16499,9 @@
 	
 	$export($export.S, 'Reflect', {set: set});
 
-/***/ }),
+/***/ },
 /* 247 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// 26.1.14 Reflect.setPrototypeOf(target, proto)
 	var $export  = __webpack_require__(9)
@@ -16552,9 +16519,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 248 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// https://github.com/tc39/Array.prototype.includes
@@ -16569,9 +16536,9 @@
 	
 	__webpack_require__(187)('includes');
 
-/***/ }),
+/***/ },
 /* 249 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// https://github.com/mathiasbynens/String.prototype.at
@@ -16584,9 +16551,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 250 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// https://github.com/tc39/proposal-string-pad-start-end
@@ -16599,9 +16566,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 251 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// https://github.com/tc39/proposal-string-pad-start-end
 	var toLength = __webpack_require__(38)
@@ -16621,9 +16588,9 @@
 	};
 
 
-/***/ }),
+/***/ },
 /* 252 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// https://github.com/tc39/proposal-string-pad-start-end
@@ -16636,9 +16603,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 253 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// https://github.com/sebmarkbage/ecmascript-string-left-right-trim
@@ -16648,9 +16615,9 @@
 	  };
 	}, 'trimStart');
 
-/***/ }),
+/***/ },
 /* 254 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// https://github.com/sebmarkbage/ecmascript-string-left-right-trim
@@ -16660,9 +16627,9 @@
 	  };
 	}, 'trimEnd');
 
-/***/ }),
+/***/ },
 /* 255 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// https://tc39.github.io/String.prototype.matchAll/
@@ -16695,21 +16662,21 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 256 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(28)('asyncIterator');
 
-/***/ }),
+/***/ },
 /* 257 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(28)('observable');
 
-/***/ }),
+/***/ },
 /* 258 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// https://github.com/tc39/proposal-object-getownpropertydescriptors
 	var $export        = __webpack_require__(9)
@@ -16731,9 +16698,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 259 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// https://github.com/tc39/proposal-object-values-entries
 	var $export = __webpack_require__(9)
@@ -16745,9 +16712,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 260 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var getKeys   = __webpack_require__(31)
 	  , toIObject = __webpack_require__(33)
@@ -16766,9 +16733,9 @@
 	  };
 	};
 
-/***/ }),
+/***/ },
 /* 261 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// https://github.com/tc39/proposal-object-values-entries
 	var $export  = __webpack_require__(9)
@@ -16780,9 +16747,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 262 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export         = __webpack_require__(9)
@@ -16797,9 +16764,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 263 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// Forced replacement prototype accessors methods
 	module.exports = __webpack_require__(29)|| !__webpack_require__(8)(function(){
@@ -16809,9 +16776,9 @@
 	  delete __webpack_require__(5)[K];
 	});
 
-/***/ }),
+/***/ },
 /* 264 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export         = __webpack_require__(9)
@@ -16826,9 +16793,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 265 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export                  = __webpack_require__(9)
@@ -16849,9 +16816,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 266 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var $export                  = __webpack_require__(9)
@@ -16872,18 +16839,18 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 267 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// https://github.com/DavidBruant/Map-Set.prototype.toJSON
 	var $export  = __webpack_require__(9);
 	
 	$export($export.P + $export.R, 'Map', {toJSON: __webpack_require__(268)('Map')});
 
-/***/ }),
+/***/ },
 /* 268 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// https://github.com/DavidBruant/Map-Set.prototype.toJSON
 	var classof = __webpack_require__(76)
@@ -16895,9 +16862,9 @@
 	  };
 	};
 
-/***/ }),
+/***/ },
 /* 269 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var forOf = __webpack_require__(207);
 	
@@ -16908,27 +16875,27 @@
 	};
 
 
-/***/ }),
+/***/ },
 /* 270 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// https://github.com/DavidBruant/Map-Set.prototype.toJSON
 	var $export  = __webpack_require__(9);
 	
 	$export($export.P + $export.R, 'Set', {toJSON: __webpack_require__(268)('Set')});
 
-/***/ }),
+/***/ },
 /* 271 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// https://github.com/ljharb/proposal-global
 	var $export = __webpack_require__(9);
 	
 	$export($export.S, 'System', {global: __webpack_require__(5)});
 
-/***/ }),
+/***/ },
 /* 272 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// https://github.com/ljharb/proposal-is-error
 	var $export = __webpack_require__(9)
@@ -16940,9 +16907,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 273 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// https://gist.github.com/BrendanEich/4294d5c212a6d2254703
 	var $export = __webpack_require__(9);
@@ -16956,9 +16923,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 274 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// https://gist.github.com/BrendanEich/4294d5c212a6d2254703
 	var $export = __webpack_require__(9);
@@ -16972,9 +16939,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 275 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// https://gist.github.com/BrendanEich/4294d5c212a6d2254703
 	var $export = __webpack_require__(9);
@@ -16993,9 +16960,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 276 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// https://gist.github.com/BrendanEich/4294d5c212a6d2254703
 	var $export = __webpack_require__(9);
@@ -17014,9 +16981,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 277 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var metadata                  = __webpack_require__(278)
 	  , anObject                  = __webpack_require__(13)
@@ -17027,9 +16994,9 @@
 	  ordinaryDefineOwnMetadata(metadataKey, metadataValue, anObject(target), toMetaKey(targetKey));
 	}});
 
-/***/ }),
+/***/ },
 /* 278 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var Map     = __webpack_require__(212)
 	  , $export = __webpack_require__(9)
@@ -17083,9 +17050,9 @@
 	  exp: exp
 	};
 
-/***/ }),
+/***/ },
 /* 279 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var metadata               = __webpack_require__(278)
 	  , anObject               = __webpack_require__(13)
@@ -17103,9 +17070,9 @@
 	  return !!targetMetadata.size || store['delete'](target);
 	}});
 
-/***/ }),
+/***/ },
 /* 280 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var metadata               = __webpack_require__(278)
 	  , anObject               = __webpack_require__(13)
@@ -17125,9 +17092,9 @@
 	  return ordinaryGetMetadata(metadataKey, anObject(target), arguments.length < 3 ? undefined : toMetaKey(arguments[2]));
 	}});
 
-/***/ }),
+/***/ },
 /* 281 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var Set                     = __webpack_require__(215)
 	  , from                    = __webpack_require__(269)
@@ -17149,9 +17116,9 @@
 	  return ordinaryMetadataKeys(anObject(target), arguments.length < 2 ? undefined : toMetaKey(arguments[1]));
 	}});
 
-/***/ }),
+/***/ },
 /* 282 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var metadata               = __webpack_require__(278)
 	  , anObject               = __webpack_require__(13)
@@ -17163,9 +17130,9 @@
 	    , arguments.length < 3 ? undefined : toMetaKey(arguments[2]));
 	}});
 
-/***/ }),
+/***/ },
 /* 283 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var metadata                = __webpack_require__(278)
 	  , anObject                = __webpack_require__(13)
@@ -17176,9 +17143,9 @@
 	  return ordinaryOwnMetadataKeys(anObject(target), arguments.length < 2 ? undefined : toMetaKey(arguments[1]));
 	}});
 
-/***/ }),
+/***/ },
 /* 284 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var metadata               = __webpack_require__(278)
 	  , anObject               = __webpack_require__(13)
@@ -17197,9 +17164,9 @@
 	  return ordinaryHasMetadata(metadataKey, anObject(target), arguments.length < 3 ? undefined : toMetaKey(arguments[2]));
 	}});
 
-/***/ }),
+/***/ },
 /* 285 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var metadata               = __webpack_require__(278)
 	  , anObject               = __webpack_require__(13)
@@ -17211,9 +17178,9 @@
 	    , arguments.length < 3 ? undefined : toMetaKey(arguments[2]));
 	}});
 
-/***/ }),
+/***/ },
 /* 286 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var metadata                  = __webpack_require__(278)
 	  , anObject                  = __webpack_require__(13)
@@ -17231,9 +17198,9 @@
 	  };
 	}});
 
-/***/ }),
+/***/ },
 /* 287 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// https://github.com/rwaldron/tc39-notes/blob/master/es6/2014-09/sept-25.md#510-globalasap-for-enqueuing-a-microtask
 	var $export   = __webpack_require__(9)
@@ -17248,9 +17215,9 @@
 	  }
 	});
 
-/***/ }),
+/***/ },
 /* 288 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	// https://github.com/zenparsing/es-observable
@@ -17452,9 +17419,9 @@
 	
 	__webpack_require__(193)('Observable');
 
-/***/ }),
+/***/ },
 /* 289 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// ie9- setTimeout & setInterval additional parameters fix
 	var global     = __webpack_require__(5)
@@ -17477,9 +17444,9 @@
 	  setInterval: wrap(global.setInterval)
 	});
 
-/***/ }),
+/***/ },
 /* 290 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	var path      = __webpack_require__(291)
@@ -17505,15 +17472,15 @@
 	  };
 	};
 
-/***/ }),
+/***/ },
 /* 291 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	module.exports = __webpack_require__(5);
 
-/***/ }),
+/***/ },
 /* 292 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $export = __webpack_require__(9)
 	  , $task   = __webpack_require__(209);
@@ -17522,9 +17489,9 @@
 	  clearImmediate: $task.clear
 	});
 
-/***/ }),
+/***/ },
 /* 293 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var $iterators    = __webpack_require__(194)
 	  , redefine      = __webpack_require__(19)
@@ -17549,9 +17516,9 @@
 	  }
 	}
 
-/***/ }),
+/***/ },
 /* 294 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global, process) {/**
 	 * Copyright (c) 2014, Facebook, Inc.
@@ -17819,34 +17786,90 @@
 	        return doneResult();
 	      }
 	
-	      context.method = method;
-	      context.arg = arg;
-	
 	      while (true) {
 	        var delegate = context.delegate;
 	        if (delegate) {
-	          var delegateResult = maybeInvokeDelegate(delegate, context);
-	          if (delegateResult) {
-	            if (delegateResult === ContinueSentinel) continue;
-	            return delegateResult;
+	          if (method === "return" ||
+	              (method === "throw" && delegate.iterator[method] === undefined)) {
+	            // A return or throw (when the delegate iterator has no throw
+	            // method) always terminates the yield* loop.
+	            context.delegate = null;
+	
+	            // If the delegate iterator has a return method, give it a
+	            // chance to clean up.
+	            var returnMethod = delegate.iterator["return"];
+	            if (returnMethod) {
+	              var record = tryCatch(returnMethod, delegate.iterator, arg);
+	              if (record.type === "throw") {
+	                // If the return method threw an exception, let that
+	                // exception prevail over the original return or throw.
+	                method = "throw";
+	                arg = record.arg;
+	                continue;
+	              }
+	            }
+	
+	            if (method === "return") {
+	              // Continue with the outer return, now that the delegate
+	              // iterator has been terminated.
+	              continue;
+	            }
 	          }
+	
+	          var record = tryCatch(
+	            delegate.iterator[method],
+	            delegate.iterator,
+	            arg
+	          );
+	
+	          if (record.type === "throw") {
+	            context.delegate = null;
+	
+	            // Like returning generator.throw(uncaught), but without the
+	            // overhead of an extra function call.
+	            method = "throw";
+	            arg = record.arg;
+	            continue;
+	          }
+	
+	          // Delegate generator ran and handled its own exceptions so
+	          // regardless of what the method was, we continue as if it is
+	          // "next" with an undefined arg.
+	          method = "next";
+	          arg = undefined;
+	
+	          var info = record.arg;
+	          if (info.done) {
+	            context[delegate.resultName] = info.value;
+	            context.next = delegate.nextLoc;
+	          } else {
+	            state = GenStateSuspendedYield;
+	            return info;
+	          }
+	
+	          context.delegate = null;
 	        }
 	
-	        if (context.method === "next") {
+	        if (method === "next") {
 	          // Setting context._sent for legacy support of Babel's
 	          // function.sent implementation.
-	          context.sent = context._sent = context.arg;
+	          context.sent = context._sent = arg;
 	
-	        } else if (context.method === "throw") {
+	        } else if (method === "throw") {
 	          if (state === GenStateSuspendedStart) {
 	            state = GenStateCompleted;
-	            throw context.arg;
+	            throw arg;
 	          }
 	
-	          context.dispatchException(context.arg);
+	          if (context.dispatchException(arg)) {
+	            // If the dispatched exception was caught by a catch block,
+	            // then let that catch block handle the exception normally.
+	            method = "next";
+	            arg = undefined;
+	          }
 	
-	        } else if (context.method === "return") {
-	          context.abrupt("return", context.arg);
+	        } else if (method === "return") {
+	          context.abrupt("return", arg);
 	        }
 	
 	        state = GenStateExecuting;
@@ -17859,106 +17882,30 @@
 	            ? GenStateCompleted
 	            : GenStateSuspendedYield;
 	
-	          if (record.arg === ContinueSentinel) {
-	            continue;
-	          }
-	
-	          return {
+	          var info = {
 	            value: record.arg,
 	            done: context.done
 	          };
 	
+	          if (record.arg === ContinueSentinel) {
+	            if (context.delegate && method === "next") {
+	              // Deliberately forget the last sent value so that we don't
+	              // accidentally pass it on to the delegate.
+	              arg = undefined;
+	            }
+	          } else {
+	            return info;
+	          }
+	
 	        } else if (record.type === "throw") {
 	          state = GenStateCompleted;
 	          // Dispatch the exception by looping back around to the
-	          // context.dispatchException(context.arg) call above.
-	          context.method = "throw";
-	          context.arg = record.arg;
+	          // context.dispatchException(arg) call above.
+	          method = "throw";
+	          arg = record.arg;
 	        }
 	      }
 	    };
-	  }
-	
-	  // Call delegate.iterator[context.method](context.arg) and handle the
-	  // result, either by returning a { value, done } result from the
-	  // delegate iterator, or by modifying context.method and context.arg,
-	  // setting context.delegate to null, and returning the ContinueSentinel.
-	  function maybeInvokeDelegate(delegate, context) {
-	    var method = delegate.iterator[context.method];
-	    if (method === undefined) {
-	      // A .throw or .return when the delegate iterator has no .throw
-	      // method always terminates the yield* loop.
-	      context.delegate = null;
-	
-	      if (context.method === "throw") {
-	        if (delegate.iterator.return) {
-	          // If the delegate iterator has a return method, give it a
-	          // chance to clean up.
-	          context.method = "return";
-	          context.arg = undefined;
-	          maybeInvokeDelegate(delegate, context);
-	
-	          if (context.method === "throw") {
-	            // If maybeInvokeDelegate(context) changed context.method from
-	            // "return" to "throw", let that override the TypeError below.
-	            return ContinueSentinel;
-	          }
-	        }
-	
-	        context.method = "throw";
-	        context.arg = new TypeError(
-	          "The iterator does not provide a 'throw' method");
-	      }
-	
-	      return ContinueSentinel;
-	    }
-	
-	    var record = tryCatch(method, delegate.iterator, context.arg);
-	
-	    if (record.type === "throw") {
-	      context.method = "throw";
-	      context.arg = record.arg;
-	      context.delegate = null;
-	      return ContinueSentinel;
-	    }
-	
-	    var info = record.arg;
-	
-	    if (! info) {
-	      context.method = "throw";
-	      context.arg = new TypeError("iterator result is not an object");
-	      context.delegate = null;
-	      return ContinueSentinel;
-	    }
-	
-	    if (info.done) {
-	      // Assign the result of the finished delegate to the temporary
-	      // variable specified by delegate.resultName (see delegateYield).
-	      context[delegate.resultName] = info.value;
-	
-	      // Resume execution at the desired location (see delegateYield).
-	      context.next = delegate.nextLoc;
-	
-	      // If context.method was "throw" but the delegate handled the
-	      // exception, let the outer generator proceed normally. If
-	      // context.method was "next", forget context.arg since it has been
-	      // "consumed" by the delegate iterator. If context.method was
-	      // "return", allow the original .return call to continue in the
-	      // outer generator.
-	      if (context.method !== "return") {
-	        context.method = "next";
-	        context.arg = undefined;
-	      }
-	
-	    } else {
-	      // Re-yield the result returned by the delegate method.
-	      return info;
-	    }
-	
-	    // The delegate iterator is finished, so forget it and continue with
-	    // the outer generator.
-	    context.delegate = null;
-	    return ContinueSentinel;
 	  }
 	
 	  // Define Generator.prototype.{next,throw,return} in terms of the
@@ -18081,9 +18028,6 @@
 	      this.done = false;
 	      this.delegate = null;
 	
-	      this.method = "next";
-	      this.arg = undefined;
-	
 	      this.tryEntries.forEach(resetTryEntry);
 	
 	      if (!skipTempReset) {
@@ -18120,15 +18064,7 @@
 	        record.type = "throw";
 	        record.arg = exception;
 	        context.next = loc;
-	
-	        if (caught) {
-	          // If the dispatched exception was caught by a catch block,
-	          // then let that catch block handle the exception normally.
-	          context.method = "next";
-	          context.arg = undefined;
-	        }
-	
-	        return !! caught;
+	        return !!caught;
 	      }
 	
 	      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
@@ -18196,12 +18132,12 @@
 	      record.arg = arg;
 	
 	      if (finallyEntry) {
-	        this.method = "next";
 	        this.next = finallyEntry.finallyLoc;
-	        return ContinueSentinel;
+	      } else {
+	        this.complete(record);
 	      }
 	
-	      return this.complete(record);
+	      return ContinueSentinel;
 	    },
 	
 	    complete: function(record, afterLoc) {
@@ -18213,14 +18149,11 @@
 	          record.type === "continue") {
 	        this.next = record.arg;
 	      } else if (record.type === "return") {
-	        this.rval = this.arg = record.arg;
-	        this.method = "return";
+	        this.rval = record.arg;
 	        this.next = "end";
 	      } else if (record.type === "normal" && afterLoc) {
 	        this.next = afterLoc;
 	      }
-	
-	      return ContinueSentinel;
 	    },
 	
 	    finish: function(finallyLoc) {
@@ -18259,12 +18192,6 @@
 	        nextLoc: nextLoc
 	      };
 	
-	      if (this.method === "next") {
-	        // Deliberately forget the last sent value so that we don't
-	        // accidentally pass it on to the delegate.
-	        this.arg = undefined;
-	      }
-	
 	      return ContinueSentinel;
 	    }
 	  };
@@ -18279,9 +18206,9 @@
 	
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(295)))
 
-/***/ }),
+/***/ },
 /* 295 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	// shim for using process in browser
 	var process = module.exports = {};
@@ -18465,16 +18392,16 @@
 	process.umask = function() { return 0; };
 
 
-/***/ }),
+/***/ },
 /* 296 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(297);
 	module.exports = __webpack_require__(10).RegExp.escape;
 
-/***/ }),
+/***/ },
 /* 297 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	// https://github.com/benjamingr/RexExp.escape
 	var $export = __webpack_require__(9)
@@ -18483,9 +18410,9 @@
 	$export($export.S, 'RegExp', {escape: function escape(it){ return $re(it); }});
 
 
-/***/ }),
+/***/ },
 /* 298 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	module.exports = function(regExp, replace){
 	  var replacer = replace === Object(replace) ? function(part){
@@ -18496,9 +18423,9 @@
 	  };
 	};
 
-/***/ }),
+/***/ },
 /* 299 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	'use strict';
 	
@@ -18523,49 +18450,49 @@
 	
 	module.exports = ChampionContact;
 
-/***/ }),
+/***/ },
 /* 300 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var Client = __webpack_require__(301);
-	var GTM = __webpack_require__(427);
-	var Header = __webpack_require__(429);
-	var LoggedIn = __webpack_require__(431);
-	var Login = __webpack_require__(428);
-	var ChampionRouter = __webpack_require__(432);
-	var SessionDurationLimit = __webpack_require__(433);
-	var ChampionSocket = __webpack_require__(420);
-	var default_redirect_url = __webpack_require__(426).default_redirect_url;
-	var url_for = __webpack_require__(426).url_for;
-	var Utility = __webpack_require__(424);
-	var ClientType = __webpack_require__(434);
+	var GTM = __webpack_require__(420);
+	var Header = __webpack_require__(422);
+	var LoggedIn = __webpack_require__(424);
+	var Login = __webpack_require__(421);
+	var ChampionRouter = __webpack_require__(425);
+	var SessionDurationLimit = __webpack_require__(426);
+	var ChampionSocket = __webpack_require__(413);
+	var default_redirect_url = __webpack_require__(419).default_redirect_url;
+	var url_for = __webpack_require__(419).url_for;
+	var Utility = __webpack_require__(417);
+	var ClientType = __webpack_require__(427);
 	var ChampionContact = __webpack_require__(299);
-	var ChampionEndpoint = __webpack_require__(435);
-	var MT5 = __webpack_require__(436);
-	var ChampionSignup = __webpack_require__(437);
-	var ChampionNewReal = __webpack_require__(439);
-	var ChampionNewVirtual = __webpack_require__(441);
-	var LostPassword = __webpack_require__(442);
-	var ResetPassword = __webpack_require__(443);
-	var Cashier = __webpack_require__(444);
-	var CashierPassword = __webpack_require__(445);
-	var CashierPaymentMethods = __webpack_require__(446);
-	var CashierTopUpVirtual = __webpack_require__(447);
-	var Authenticate = __webpack_require__(448);
-	var ChangePassword = __webpack_require__(449);
-	var MetaTrader = __webpack_require__(450);
-	var SelfExclusion = __webpack_require__(453);
-	var ChampionSettings = __webpack_require__(456);
-	var TNCApproval = __webpack_require__(457);
-	var CashierDepositWithdraw = __webpack_require__(458);
-	var Home = __webpack_require__(459);
-	var ChampionProfile = __webpack_require__(462);
-	var ChampionSecurity = __webpack_require__(466);
-	var LoginHistory = __webpack_require__(467);
-	var TradingTimes = __webpack_require__(468);
-	var Limits = __webpack_require__(469);
+	var ChampionEndpoint = __webpack_require__(428);
+	var MT5 = __webpack_require__(429);
+	var ChampionSignup = __webpack_require__(430);
+	var ChampionNewReal = __webpack_require__(432);
+	var ChampionNewVirtual = __webpack_require__(434);
+	var LostPassword = __webpack_require__(435);
+	var ResetPassword = __webpack_require__(436);
+	var Cashier = __webpack_require__(437);
+	var CashierPassword = __webpack_require__(438);
+	var CashierPaymentMethods = __webpack_require__(439);
+	var CashierTopUpVirtual = __webpack_require__(440);
+	var Authenticate = __webpack_require__(441);
+	var ChangePassword = __webpack_require__(442);
+	var MetaTrader = __webpack_require__(443);
+	var SelfExclusion = __webpack_require__(446);
+	var ChampionSettings = __webpack_require__(449);
+	var TNCApproval = __webpack_require__(450);
+	var CashierDepositWithdraw = __webpack_require__(451);
+	var Home = __webpack_require__(452);
+	var ChampionProfile = __webpack_require__(455);
+	var ChampionSecurity = __webpack_require__(459);
+	var LoginHistory = __webpack_require__(460);
+	var TradingTimes = __webpack_require__(461);
+	var Limits = __webpack_require__(462);
 	
 	var Champion = function () {
 	    'use strict';
@@ -18706,20 +18633,20 @@
 	
 	module.exports = Champion;
 
-/***/ }),
+/***/ },
 /* 301 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var moment = __webpack_require__(302);
-	var ChampionSocket = __webpack_require__(420);
-	var CookieStorage = __webpack_require__(423).CookieStorage;
-	var LocalStore = __webpack_require__(423).LocalStore;
-	var State = __webpack_require__(423).State;
-	var url = __webpack_require__(426);
-	var template = __webpack_require__(424).template;
-	var Cookies = __webpack_require__(421);
+	var ChampionSocket = __webpack_require__(413);
+	var CookieStorage = __webpack_require__(416).CookieStorage;
+	var LocalStore = __webpack_require__(416).LocalStore;
+	var State = __webpack_require__(416).State;
+	var url = __webpack_require__(419);
+	var template = __webpack_require__(417).template;
+	var Cookies = __webpack_require__(414);
 	
 	var Client = function () {
 	    var client_object = {};
@@ -18982,12 +18909,12 @@
 	
 	module.exports = Client;
 
-/***/ }),
+/***/ },
 /* 302 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(module) {//! moment.js
-	//! version : 2.18.1
+	//! version : 2.17.1
 	//! authors : Tim Wood, Iskren Chernev, Moment.js contributors
 	//! license : MIT
 	//! momentjs.com
@@ -19027,10 +18954,6 @@
 	        return false;
 	    }
 	    return true;
-	}
-	
-	function isUndefined(input) {
-	    return input === void 0;
 	}
 	
 	function isNumber(input) {
@@ -19089,9 +19012,7 @@
 	        userInvalidated : false,
 	        iso             : false,
 	        parsedDateParts : [],
-	        meridiem        : null,
-	        rfc2822         : false,
-	        weekdayMismatch : false
+	        meridiem        : null
 	    };
 	}
 	
@@ -19167,6 +19088,10 @@
 	    return m;
 	}
 	
+	function isUndefined(input) {
+	    return input === void 0;
+	}
+	
 	// Plugins that add properties should also add the key here (null value),
 	// so we can properly clone ourselves.
 	var momentProperties = hooks.momentProperties = [];
@@ -19206,7 +19131,7 @@
 	    }
 	
 	    if (momentProperties.length > 0) {
-	        for (i = 0; i < momentProperties.length; i++) {
+	        for (i in momentProperties) {
 	            prop = momentProperties[i];
 	            val = from[prop];
 	            if (!isUndefined(val)) {
@@ -19343,11 +19268,8 @@
 	    }
 	    this._config = config;
 	    // Lenient ordinal parsing accepts just a number in addition to
-	    // number + (possibly) stuff coming from _dayOfMonthOrdinalParse.
-	    // TODO: Remove "ordinalParse" fallback in next major release.
-	    this._dayOfMonthOrdinalParseLenient = new RegExp(
-	        (this._dayOfMonthOrdinalParse.source || this._ordinalParse.source) +
-	            '|' + (/\d{1,2}/).source);
+	    // number + (possibly) stuff coming from _ordinalParseLenient.
+	    this._ordinalParseLenient = new RegExp(this._ordinalParse.source + '|' + (/\d{1,2}/).source);
 	}
 	
 	function mergeConfigs(parentConfig, childConfig) {
@@ -19445,7 +19367,7 @@
 	}
 	
 	var defaultOrdinal = '%d';
-	var defaultDayOfMonthOrdinalParse = /\d{1,2}/;
+	var defaultOrdinalParse = /\d{1,2}/;
 	
 	function ordinal (number) {
 	    return this._ordinal.replace('%d', number);
@@ -19455,7 +19377,6 @@
 	    future : 'in %s',
 	    past   : '%s ago',
 	    s  : 'a few seconds',
-	    ss : '%d seconds',
 	    m  : 'a minute',
 	    mm : '%d minutes',
 	    h  : 'an hour',
@@ -19638,7 +19559,7 @@
 	    return function (mom) {
 	        var output = '', i;
 	        for (i = 0; i < length; i++) {
-	            output += isFunction(array[i]) ? array[i].call(mom, format) : array[i];
+	            output += array[i] instanceof Function ? array[i].call(mom, format) : array[i];
 	        }
 	        return output;
 	    };
@@ -19841,8 +19762,7 @@
 	var defaultLocaleMonths = 'January_February_March_April_May_June_July_August_September_October_November_December'.split('_');
 	function localeMonths (m, format) {
 	    if (!m) {
-	        return isArray(this._months) ? this._months :
-	            this._months['standalone'];
+	        return this._months;
 	    }
 	    return isArray(this._months) ? this._months[m.month()] :
 	        this._months[(this._months.isFormat || MONTHS_IN_FORMAT).test(format) ? 'format' : 'standalone'][m.month()];
@@ -19851,8 +19771,7 @@
 	var defaultLocaleMonthsShort = 'Jan_Feb_Mar_Apr_May_Jun_Jul_Aug_Sep_Oct_Nov_Dec'.split('_');
 	function localeMonthsShort (m, format) {
 	    if (!m) {
-	        return isArray(this._monthsShort) ? this._monthsShort :
-	            this._monthsShort['standalone'];
+	        return this._monthsShort;
 	    }
 	    return isArray(this._monthsShort) ? this._monthsShort[m.month()] :
 	        this._monthsShort[MONTHS_IN_FORMAT.test(format) ? 'format' : 'standalone'][m.month()];
@@ -20119,11 +20038,11 @@
 	}
 	
 	function createDate (y, m, d, h, M, s, ms) {
-	    // can't just apply() to create a date:
-	    // https://stackoverflow.com/q/181348
+	    //can't just apply() to create a date:
+	    //http://stackoverflow.com/questions/181348/instantiating-a-javascript-object-by-calling-prototype-constructor-apply
 	    var date = new Date(y, m, d, h, M, s, ms);
 	
-	    // the date constructor remaps years 0-99 to 1900-1999
+	    //the date constructor remaps years 0-99 to 1900-1999
 	    if (y < 100 && y >= 0 && isFinite(date.getFullYear())) {
 	        date.setFullYear(y);
 	    }
@@ -20133,7 +20052,7 @@
 	function createUTCDate (y) {
 	    var date = new Date(Date.UTC.apply(null, arguments));
 	
-	    // the Date.UTC function remaps years 0-99 to 1900-1999
+	    //the Date.UTC function remaps years 0-99 to 1900-1999
 	    if (y < 100 && y >= 0 && isFinite(date.getUTCFullYear())) {
 	        date.setUTCFullYear(y);
 	    }
@@ -20150,7 +20069,7 @@
 	    return -fwdlw + fwd - 1;
 	}
 	
-	// https://en.wikipedia.org/wiki/ISO_week_date#Calculating_a_date_given_the_year.2C_week_number_and_weekday
+	//http://en.wikipedia.org/wiki/ISO_week_date#Calculating_a_date_given_the_year.2C_week_number_and_weekday
 	function dayOfYearFromWeeks(year, week, weekday, dow, doy) {
 	    var localWeekday = (7 + weekday - dow) % 7,
 	        weekOffset = firstWeekOffset(year, dow, doy),
@@ -20351,8 +20270,7 @@
 	var defaultLocaleWeekdays = 'Sunday_Monday_Tuesday_Wednesday_Thursday_Friday_Saturday'.split('_');
 	function localeWeekdays (m, format) {
 	    if (!m) {
-	        return isArray(this._weekdays) ? this._weekdays :
-	            this._weekdays['standalone'];
+	        return this._weekdays;
 	    }
 	    return isArray(this._weekdays) ? this._weekdays[m.day()] :
 	        this._weekdays[this._weekdays.isFormat.test(format) ? 'format' : 'standalone'][m.day()];
@@ -20672,10 +20590,8 @@
 	addRegexToken('A',  matchMeridiem);
 	addRegexToken('H',  match1to2);
 	addRegexToken('h',  match1to2);
-	addRegexToken('k',  match1to2);
 	addRegexToken('HH', match1to2, match2);
 	addRegexToken('hh', match1to2, match2);
-	addRegexToken('kk', match1to2, match2);
 	
 	addRegexToken('hmm', match3to4);
 	addRegexToken('hmmss', match5to6);
@@ -20683,10 +20599,6 @@
 	addRegexToken('Hmmss', match5to6);
 	
 	addParseToken(['H', 'HH'], HOUR);
-	addParseToken(['k', 'kk'], function (input, array, config) {
-	    var kInput = toInt(input);
-	    array[HOUR] = kInput === 24 ? 0 : kInput;
-	});
 	addParseToken(['a', 'A'], function (input, array, config) {
 	    config._isPm = config._locale.isPM(input);
 	    config._meridiem = input;
@@ -20757,7 +20669,7 @@
 	    longDateFormat: defaultLongDateFormat,
 	    invalidDate: defaultInvalidDate,
 	    ordinal: defaultOrdinal,
-	    dayOfMonthOrdinalParse: defaultDayOfMonthOrdinalParse,
+	    ordinalParse: defaultOrdinalParse,
 	    relativeTime: defaultRelativeTime,
 	
 	    months: defaultLocaleMonths,
@@ -21068,77 +20980,6 @@
 	    }
 	}
 	
-	// RFC 2822 regex: For details see https://tools.ietf.org/html/rfc2822#section-3.3
-	var basicRfcRegex = /^((?:Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s)?(\d?\d\s(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s(?:\d\d)?\d\d\s)(\d\d:\d\d)(\:\d\d)?(\s(?:UT|GMT|[ECMP][SD]T|[A-IK-Za-ik-z]|[+-]\d{4}))$/;
-	
-	// date and time from ref 2822 format
-	function configFromRFC2822(config) {
-	    var string, match, dayFormat,
-	        dateFormat, timeFormat, tzFormat;
-	    var timezones = {
-	        ' GMT': ' +0000',
-	        ' EDT': ' -0400',
-	        ' EST': ' -0500',
-	        ' CDT': ' -0500',
-	        ' CST': ' -0600',
-	        ' MDT': ' -0600',
-	        ' MST': ' -0700',
-	        ' PDT': ' -0700',
-	        ' PST': ' -0800'
-	    };
-	    var military = 'YXWVUTSRQPONZABCDEFGHIKLM';
-	    var timezone, timezoneIndex;
-	
-	    string = config._i
-	        .replace(/\([^\)]*\)|[\n\t]/g, ' ') // Remove comments and folding whitespace
-	        .replace(/(\s\s+)/g, ' ') // Replace multiple-spaces with a single space
-	        .replace(/^\s|\s$/g, ''); // Remove leading and trailing spaces
-	    match = basicRfcRegex.exec(string);
-	
-	    if (match) {
-	        dayFormat = match[1] ? 'ddd' + ((match[1].length === 5) ? ', ' : ' ') : '';
-	        dateFormat = 'D MMM ' + ((match[2].length > 10) ? 'YYYY ' : 'YY ');
-	        timeFormat = 'HH:mm' + (match[4] ? ':ss' : '');
-	
-	        // TODO: Replace the vanilla JS Date object with an indepentent day-of-week check.
-	        if (match[1]) { // day of week given
-	            var momentDate = new Date(match[2]);
-	            var momentDay = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][momentDate.getDay()];
-	
-	            if (match[1].substr(0,3) !== momentDay) {
-	                getParsingFlags(config).weekdayMismatch = true;
-	                config._isValid = false;
-	                return;
-	            }
-	        }
-	
-	        switch (match[5].length) {
-	            case 2: // military
-	                if (timezoneIndex === 0) {
-	                    timezone = ' +0000';
-	                } else {
-	                    timezoneIndex = military.indexOf(match[5][1].toUpperCase()) - 12;
-	                    timezone = ((timezoneIndex < 0) ? ' -' : ' +') +
-	                        (('' + timezoneIndex).replace(/^-?/, '0')).match(/..$/)[0] + '00';
-	                }
-	                break;
-	            case 4: // Zone
-	                timezone = timezones[match[5]];
-	                break;
-	            default: // UT or +/-9999
-	                timezone = timezones[' GMT'];
-	        }
-	        match[5] = timezone;
-	        config._i = match.splice(1).join('');
-	        tzFormat = ' ZZ';
-	        config._f = dayFormat + dateFormat + timeFormat + tzFormat;
-	        configFromStringAndFormat(config);
-	        getParsingFlags(config).rfc2822 = true;
-	    } else {
-	        config._isValid = false;
-	    }
-	}
-	
 	// date from iso format or fallback
 	function configFromString(config) {
 	    var matched = aspNetJsonRegex.exec(config._i);
@@ -21151,24 +20992,13 @@
 	    configFromISO(config);
 	    if (config._isValid === false) {
 	        delete config._isValid;
-	    } else {
-	        return;
+	        hooks.createFromInputFallback(config);
 	    }
-	
-	    configFromRFC2822(config);
-	    if (config._isValid === false) {
-	        delete config._isValid;
-	    } else {
-	        return;
-	    }
-	
-	    // Final attempt, use Input Fallback
-	    hooks.createFromInputFallback(config);
 	}
 	
 	hooks.createFromInputFallback = deprecate(
-	    'value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), ' +
-	    'which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are ' +
+	    'value provided is not in a recognized ISO format. moment construction falls back to js Date(), ' +
+	    'which is not reliable across all browsers and versions. Non ISO date formats are ' +
 	    'discouraged and will be removed in an upcoming major release. Please refer to ' +
 	    'http://momentjs.com/guides/#/warnings/js-date/ for more info.',
 	    function (config) {
@@ -21215,10 +21045,10 @@
 	    }
 	
 	    //if the day of the year is set, figure out what it is
-	    if (config._dayOfYear != null) {
+	    if (config._dayOfYear) {
 	        yearToUse = defaults(config._a[YEAR], currentDate[YEAR]);
 	
-	        if (config._dayOfYear > daysInYear(yearToUse) || config._dayOfYear === 0) {
+	        if (config._dayOfYear > daysInYear(yearToUse)) {
 	            getParsingFlags(config)._overflowDayOfYear = true;
 	        }
 	
@@ -21322,9 +21152,6 @@
 	// constant that refers to the ISO standard
 	hooks.ISO_8601 = function () {};
 	
-	// constant that refers to the RFC 2822 form
-	hooks.RFC_2822 = function () {};
-	
 	// date from string and format string
 	function configFromStringAndFormat(config) {
 	    // TODO: Move this to another part of the creation flow to prevent circular deps
@@ -21332,10 +21159,7 @@
 	        configFromISO(config);
 	        return;
 	    }
-	    if (config._f === hooks.RFC_2822) {
-	        configFromRFC2822(config);
-	        return;
-	    }
+	
 	    config._a = [];
 	    getParsingFlags(config).empty = true;
 	
@@ -21527,7 +21351,7 @@
 	
 	function configFromInput(config) {
 	    var input = config._i;
-	    if (isUndefined(input)) {
+	    if (input === undefined) {
 	        config._d = new Date(hooks.now());
 	    } else if (isDate(input)) {
 	        config._d = new Date(input.valueOf());
@@ -21538,7 +21362,7 @@
 	            return parseInt(obj, 10);
 	        });
 	        configFromArray(config);
-	    } else if (isObject(input)) {
+	    } else if (typeof(input) === 'object') {
 	        configFromObject(config);
 	    } else if (isNumber(input)) {
 	        // from milliseconds
@@ -21639,38 +21463,6 @@
 	    return Date.now ? Date.now() : +(new Date());
 	};
 	
-	var ordering = ['year', 'quarter', 'month', 'week', 'day', 'hour', 'minute', 'second', 'millisecond'];
-	
-	function isDurationValid(m) {
-	    for (var key in m) {
-	        if (!(ordering.indexOf(key) !== -1 && (m[key] == null || !isNaN(m[key])))) {
-	            return false;
-	        }
-	    }
-	
-	    var unitHasDecimal = false;
-	    for (var i = 0; i < ordering.length; ++i) {
-	        if (m[ordering[i]]) {
-	            if (unitHasDecimal) {
-	                return false; // only allow non-integers for smallest unit
-	            }
-	            if (parseFloat(m[ordering[i]]) !== toInt(m[ordering[i]])) {
-	                unitHasDecimal = true;
-	            }
-	        }
-	    }
-	
-	    return true;
-	}
-	
-	function isValid$1() {
-	    return this._isValid;
-	}
-	
-	function createInvalid$1() {
-	    return createDuration(NaN);
-	}
-	
 	function Duration (duration) {
 	    var normalizedInput = normalizeObjectUnits(duration),
 	        years = normalizedInput.year || 0,
@@ -21682,8 +21474,6 @@
 	        minutes = normalizedInput.minute || 0,
 	        seconds = normalizedInput.second || 0,
 	        milliseconds = normalizedInput.millisecond || 0;
-	
-	    this._isValid = isDurationValid(normalizedInput);
 	
 	    // representation for dateAddRemove
 	    this._milliseconds = +milliseconds +
@@ -21808,7 +21598,7 @@
 	// a second time. In case it wants us to change the offset again
 	// _changeInProgress == true case, then we have to adjust, because
 	// there is no such time in the given timezone.
-	function getSetOffset (input, keepLocalTime, keepMinutes) {
+	function getSetOffset (input, keepLocalTime) {
 	    var offset = this._offset || 0,
 	        localAdjust;
 	    if (!this.isValid()) {
@@ -21820,7 +21610,7 @@
 	            if (input === null) {
 	                return this;
 	            }
-	        } else if (Math.abs(input) < 16 && !keepMinutes) {
+	        } else if (Math.abs(input) < 16) {
 	            input = input * 60;
 	        }
 	        if (!this._isUTC && keepLocalTime) {
@@ -21878,7 +21668,7 @@
 	
 	function setOffsetToParsedOffset () {
 	    if (this._tzm != null) {
-	        this.utcOffset(this._tzm, false, true);
+	        this.utcOffset(this._tzm);
 	    } else if (typeof this._i === 'string') {
 	        var tZone = offsetFromString(matchOffset, this._i);
 	        if (tZone != null) {
@@ -22010,7 +21800,6 @@
 	}
 	
 	createDuration.fn = Duration.prototype;
-	createDuration.invalid = createInvalid$1;
 	
 	function parseIso (inp, sign) {
 	    // We'd normally use ~~inp for this, but unfortunately it also
@@ -22247,19 +22036,18 @@
 	    return this.clone().locale('en').format('ddd MMM DD YYYY HH:mm:ss [GMT]ZZ');
 	}
 	
-	function toISOString() {
-	    if (!this.isValid()) {
-	        return null;
-	    }
+	function toISOString () {
 	    var m = this.clone().utc();
-	    if (m.year() < 0 || m.year() > 9999) {
+	    if (0 < m.year() && m.year() <= 9999) {
+	        if (isFunction(Date.prototype.toISOString)) {
+	            // native implementation is ~50x faster, use it when we can
+	            return this.toDate().toISOString();
+	        } else {
+	            return formatMoment(m, 'YYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
+	        }
+	    } else {
 	        return formatMoment(m, 'YYYYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
 	    }
-	    if (isFunction(Date.prototype.toISOString)) {
-	        // native implementation is ~50x faster, use it when we can
-	        return this.toDate().toISOString();
-	    }
-	    return formatMoment(m, 'YYYY-MM-DD[T]HH:mm:ss.SSS[Z]');
 	}
 	
 	/**
@@ -22279,7 +22067,7 @@
 	        zone = 'Z';
 	    }
 	    var prefix = '[' + func + '("]';
-	    var year = (0 <= this.year() && this.year() <= 9999) ? 'YYYY' : 'YYYYYY';
+	    var year = (0 < this.year() && this.year() <= 9999) ? 'YYYY' : 'YYYYYY';
 	    var datetime = '-MM-DD[T]HH:mm:ss.SSS';
 	    var suffix = zone + '[")]';
 	
@@ -22447,7 +22235,7 @@
 	    return this.isValid() ? this.toISOString() : null;
 	}
 	
-	function isValid$2 () {
+	function isValid$1 () {
 	    return isValid(this);
 	}
 	
@@ -22607,10 +22395,7 @@
 	addRegexToken('D',  match1to2);
 	addRegexToken('DD', match1to2, match2);
 	addRegexToken('Do', function (isStrict, locale) {
-	    // TODO: Remove "ordinalParse" fallback in next major release.
-	    return isStrict ?
-	      (locale._dayOfMonthOrdinalParse || locale._ordinalParse) :
-	      locale._dayOfMonthOrdinalParseLenient;
+	    return isStrict ? locale._ordinalParse : locale._ordinalParseLenient;
 	});
 	
 	addParseToken(['D', 'DD'], DATE);
@@ -22790,7 +22575,7 @@
 	proto.isSame            = isSame;
 	proto.isSameOrAfter     = isSameOrAfter;
 	proto.isSameOrBefore    = isSameOrBefore;
-	proto.isValid           = isValid$2;
+	proto.isValid           = isValid$1;
 	proto.lang              = lang;
 	proto.locale            = locale;
 	proto.localeData        = localeData;
@@ -23015,7 +22800,7 @@
 	}
 	
 	getSetGlobalLocale('en', {
-	    dayOfMonthOrdinalParse: /\d{1,2}(th|st|nd|rd)/,
+	    ordinalParse: /\d{1,2}(th|st|nd|rd)/,
 	    ordinal : function (number) {
 	        var b = number % 10,
 	            output = (toInt(number % 100 / 10) === 1) ? 'th' :
@@ -23136,9 +22921,6 @@
 	}
 	
 	function as (units) {
-	    if (!this.isValid()) {
-	        return NaN;
-	    }
 	    var days;
 	    var months;
 	    var milliseconds = this._milliseconds;
@@ -23167,9 +22949,6 @@
 	
 	// TODO: Use this.as('ms')?
 	function valueOf$1 () {
-	    if (!this.isValid()) {
-	        return NaN;
-	    }
 	    return (
 	        this._milliseconds +
 	        this._days * 864e5 +
@@ -23195,12 +22974,12 @@
 	
 	function get$2 (units) {
 	    units = normalizeUnits(units);
-	    return this.isValid() ? this[units + 's']() : NaN;
+	    return this[units + 's']();
 	}
 	
 	function makeGetter(name) {
 	    return function () {
-	        return this.isValid() ? this._data[name] : NaN;
+	        return this._data[name];
 	    };
 	}
 	
@@ -23218,12 +22997,11 @@
 	
 	var round = Math.round;
 	var thresholds = {
-	    ss: 44,         // a few seconds to seconds
-	    s : 45,         // seconds to minute
-	    m : 45,         // minutes to hour
-	    h : 22,         // hours to day
-	    d : 26,         // days to month
-	    M : 11          // months to year
+	    s: 45,  // seconds to minute
+	    m: 45,  // minutes to hour
+	    h: 22,  // hours to day
+	    d: 26,  // days to month
+	    M: 11   // months to year
 	};
 	
 	// helper function for moment.fn.from, moment.fn.fromNow, and moment.duration.fn.humanize
@@ -23240,17 +23018,16 @@
 	    var months   = round(duration.as('M'));
 	    var years    = round(duration.as('y'));
 	
-	    var a = seconds <= thresholds.ss && ['s', seconds]  ||
-	            seconds < thresholds.s   && ['ss', seconds] ||
-	            minutes <= 1             && ['m']           ||
-	            minutes < thresholds.m   && ['mm', minutes] ||
-	            hours   <= 1             && ['h']           ||
-	            hours   < thresholds.h   && ['hh', hours]   ||
-	            days    <= 1             && ['d']           ||
-	            days    < thresholds.d   && ['dd', days]    ||
-	            months  <= 1             && ['M']           ||
-	            months  < thresholds.M   && ['MM', months]  ||
-	            years   <= 1             && ['y']           || ['yy', years];
+	    var a = seconds < thresholds.s && ['s', seconds]  ||
+	            minutes <= 1           && ['m']           ||
+	            minutes < thresholds.m && ['mm', minutes] ||
+	            hours   <= 1           && ['h']           ||
+	            hours   < thresholds.h && ['hh', hours]   ||
+	            days    <= 1           && ['d']           ||
+	            days    < thresholds.d && ['dd', days]    ||
+	            months  <= 1           && ['M']           ||
+	            months  < thresholds.M && ['MM', months]  ||
+	            years   <= 1           && ['y']           || ['yy', years];
 	
 	    a[2] = withoutSuffix;
 	    a[3] = +posNegDuration > 0;
@@ -23279,17 +23056,10 @@
 	        return thresholds[threshold];
 	    }
 	    thresholds[threshold] = limit;
-	    if (threshold === 's') {
-	        thresholds.ss = limit - 1;
-	    }
 	    return true;
 	}
 	
 	function humanize (withSuffix) {
-	    if (!this.isValid()) {
-	        return this.localeData().invalidDate();
-	    }
-	
 	    var locale = this.localeData();
 	    var output = relativeTime$1(this, !withSuffix, locale);
 	
@@ -23310,10 +23080,6 @@
 	    // This is because there is no context-free conversion between hours and days
 	    // (think of clock changes)
 	    // and also not between days and months (28-31 days per month)
-	    if (!this.isValid()) {
-	        return this.localeData().invalidDate();
-	    }
-	
 	    var seconds = abs$1(this._milliseconds) / 1000;
 	    var days         = abs$1(this._days);
 	    var months       = abs$1(this._months);
@@ -23358,7 +23124,6 @@
 	
 	var proto$2 = Duration.prototype;
 	
-	proto$2.isValid        = isValid$1;
 	proto$2.abs            = abs;
 	proto$2.add            = add$1;
 	proto$2.subtract       = subtract$1;
@@ -23414,7 +23179,7 @@
 	// Side effect imports
 	
 	
-	hooks.version = '2.18.1';
+	hooks.version = '2.17.1';
 	
 	setHookCallback(createLocal);
 	
@@ -23452,9 +23217,9 @@
 	
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(303)(module)))
 
-/***/ }),
+/***/ },
 /* 303 */
-/***/ (function(module, exports) {
+/***/ function(module, exports) {
 
 	module.exports = function(module) {
 		if(!module.webpackPolyfill) {
@@ -23468,9 +23233,9 @@
 	}
 
 
-/***/ }),
+/***/ },
 /* 304 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	var map = {
 		"./af": 305,
@@ -23478,231 +23243,217 @@
 		"./ar": 306,
 		"./ar-dz": 307,
 		"./ar-dz.js": 307,
-		"./ar-kw": 308,
-		"./ar-kw.js": 308,
-		"./ar-ly": 309,
-		"./ar-ly.js": 309,
-		"./ar-ma": 310,
-		"./ar-ma.js": 310,
-		"./ar-sa": 311,
-		"./ar-sa.js": 311,
-		"./ar-tn": 312,
-		"./ar-tn.js": 312,
+		"./ar-ly": 308,
+		"./ar-ly.js": 308,
+		"./ar-ma": 309,
+		"./ar-ma.js": 309,
+		"./ar-sa": 310,
+		"./ar-sa.js": 310,
+		"./ar-tn": 311,
+		"./ar-tn.js": 311,
 		"./ar.js": 306,
-		"./az": 313,
-		"./az.js": 313,
-		"./be": 314,
-		"./be.js": 314,
-		"./bg": 315,
-		"./bg.js": 315,
-		"./bn": 316,
-		"./bn.js": 316,
-		"./bo": 317,
-		"./bo.js": 317,
-		"./br": 318,
-		"./br.js": 318,
-		"./bs": 319,
-		"./bs.js": 319,
-		"./ca": 320,
-		"./ca.js": 320,
-		"./cs": 321,
-		"./cs.js": 321,
-		"./cv": 322,
-		"./cv.js": 322,
-		"./cy": 323,
-		"./cy.js": 323,
-		"./da": 324,
-		"./da.js": 324,
-		"./de": 325,
-		"./de-at": 326,
-		"./de-at.js": 326,
-		"./de-ch": 327,
-		"./de-ch.js": 327,
-		"./de.js": 325,
-		"./dv": 328,
-		"./dv.js": 328,
-		"./el": 329,
-		"./el.js": 329,
-		"./en-au": 330,
-		"./en-au.js": 330,
-		"./en-ca": 331,
-		"./en-ca.js": 331,
-		"./en-gb": 332,
-		"./en-gb.js": 332,
-		"./en-ie": 333,
-		"./en-ie.js": 333,
-		"./en-nz": 334,
-		"./en-nz.js": 334,
-		"./eo": 335,
-		"./eo.js": 335,
-		"./es": 336,
-		"./es-do": 337,
-		"./es-do.js": 337,
-		"./es.js": 336,
-		"./et": 338,
-		"./et.js": 338,
-		"./eu": 339,
-		"./eu.js": 339,
-		"./fa": 340,
-		"./fa.js": 340,
-		"./fi": 341,
-		"./fi.js": 341,
-		"./fo": 342,
-		"./fo.js": 342,
-		"./fr": 343,
-		"./fr-ca": 344,
-		"./fr-ca.js": 344,
-		"./fr-ch": 345,
-		"./fr-ch.js": 345,
-		"./fr.js": 343,
-		"./fy": 346,
-		"./fy.js": 346,
-		"./gd": 347,
-		"./gd.js": 347,
-		"./gl": 348,
-		"./gl.js": 348,
-		"./gom-latn": 349,
-		"./gom-latn.js": 349,
-		"./he": 350,
-		"./he.js": 350,
-		"./hi": 351,
-		"./hi.js": 351,
-		"./hr": 352,
-		"./hr.js": 352,
-		"./hu": 353,
-		"./hu.js": 353,
-		"./hy-am": 354,
-		"./hy-am.js": 354,
-		"./id": 355,
-		"./id.js": 355,
-		"./is": 356,
-		"./is.js": 356,
-		"./it": 357,
-		"./it.js": 357,
-		"./ja": 358,
-		"./ja.js": 358,
-		"./jv": 359,
-		"./jv.js": 359,
-		"./ka": 360,
-		"./ka.js": 360,
-		"./kk": 361,
-		"./kk.js": 361,
-		"./km": 362,
-		"./km.js": 362,
-		"./kn": 363,
-		"./kn.js": 363,
-		"./ko": 364,
-		"./ko.js": 364,
-		"./ky": 365,
-		"./ky.js": 365,
-		"./lb": 366,
-		"./lb.js": 366,
-		"./lo": 367,
-		"./lo.js": 367,
-		"./lt": 368,
-		"./lt.js": 368,
-		"./lv": 369,
-		"./lv.js": 369,
-		"./me": 370,
-		"./me.js": 370,
-		"./mi": 371,
-		"./mi.js": 371,
-		"./mk": 372,
-		"./mk.js": 372,
-		"./ml": 373,
-		"./ml.js": 373,
-		"./mr": 374,
-		"./mr.js": 374,
-		"./ms": 375,
-		"./ms-my": 376,
-		"./ms-my.js": 376,
-		"./ms.js": 375,
-		"./my": 377,
-		"./my.js": 377,
-		"./nb": 378,
-		"./nb.js": 378,
-		"./ne": 379,
-		"./ne.js": 379,
-		"./nl": 380,
-		"./nl-be": 381,
-		"./nl-be.js": 381,
-		"./nl.js": 380,
-		"./nn": 382,
-		"./nn.js": 382,
-		"./pa-in": 383,
-		"./pa-in.js": 383,
-		"./pl": 384,
-		"./pl.js": 384,
-		"./pt": 385,
-		"./pt-br": 386,
-		"./pt-br.js": 386,
-		"./pt.js": 385,
-		"./ro": 387,
-		"./ro.js": 387,
-		"./ru": 388,
-		"./ru.js": 388,
-		"./sd": 389,
-		"./sd.js": 389,
-		"./se": 390,
-		"./se.js": 390,
-		"./si": 391,
-		"./si.js": 391,
-		"./sk": 392,
-		"./sk.js": 392,
-		"./sl": 393,
-		"./sl.js": 393,
-		"./sq": 394,
-		"./sq.js": 394,
-		"./sr": 395,
-		"./sr-cyrl": 396,
-		"./sr-cyrl.js": 396,
-		"./sr.js": 395,
-		"./ss": 397,
-		"./ss.js": 397,
-		"./sv": 398,
-		"./sv.js": 398,
-		"./sw": 399,
-		"./sw.js": 399,
-		"./ta": 400,
-		"./ta.js": 400,
-		"./te": 401,
-		"./te.js": 401,
-		"./tet": 402,
-		"./tet.js": 402,
-		"./th": 403,
-		"./th.js": 403,
-		"./tl-ph": 404,
-		"./tl-ph.js": 404,
-		"./tlh": 405,
-		"./tlh.js": 405,
-		"./tr": 406,
-		"./tr.js": 406,
-		"./tzl": 407,
-		"./tzl.js": 407,
-		"./tzm": 408,
-		"./tzm-latn": 409,
-		"./tzm-latn.js": 409,
-		"./tzm.js": 408,
-		"./uk": 410,
-		"./uk.js": 410,
-		"./ur": 411,
-		"./ur.js": 411,
-		"./uz": 412,
-		"./uz-latn": 413,
-		"./uz-latn.js": 413,
-		"./uz.js": 412,
-		"./vi": 414,
-		"./vi.js": 414,
-		"./x-pseudo": 415,
-		"./x-pseudo.js": 415,
-		"./yo": 416,
-		"./yo.js": 416,
-		"./zh-cn": 417,
-		"./zh-cn.js": 417,
-		"./zh-hk": 418,
-		"./zh-hk.js": 418,
-		"./zh-tw": 419,
-		"./zh-tw.js": 419
+		"./az": 312,
+		"./az.js": 312,
+		"./be": 313,
+		"./be.js": 313,
+		"./bg": 314,
+		"./bg.js": 314,
+		"./bn": 315,
+		"./bn.js": 315,
+		"./bo": 316,
+		"./bo.js": 316,
+		"./br": 317,
+		"./br.js": 317,
+		"./bs": 318,
+		"./bs.js": 318,
+		"./ca": 319,
+		"./ca.js": 319,
+		"./cs": 320,
+		"./cs.js": 320,
+		"./cv": 321,
+		"./cv.js": 321,
+		"./cy": 322,
+		"./cy.js": 322,
+		"./da": 323,
+		"./da.js": 323,
+		"./de": 324,
+		"./de-at": 325,
+		"./de-at.js": 325,
+		"./de.js": 324,
+		"./dv": 326,
+		"./dv.js": 326,
+		"./el": 327,
+		"./el.js": 327,
+		"./en-au": 328,
+		"./en-au.js": 328,
+		"./en-ca": 329,
+		"./en-ca.js": 329,
+		"./en-gb": 330,
+		"./en-gb.js": 330,
+		"./en-ie": 331,
+		"./en-ie.js": 331,
+		"./en-nz": 332,
+		"./en-nz.js": 332,
+		"./eo": 333,
+		"./eo.js": 333,
+		"./es": 334,
+		"./es-do": 335,
+		"./es-do.js": 335,
+		"./es.js": 334,
+		"./et": 336,
+		"./et.js": 336,
+		"./eu": 337,
+		"./eu.js": 337,
+		"./fa": 338,
+		"./fa.js": 338,
+		"./fi": 339,
+		"./fi.js": 339,
+		"./fo": 340,
+		"./fo.js": 340,
+		"./fr": 341,
+		"./fr-ca": 342,
+		"./fr-ca.js": 342,
+		"./fr-ch": 343,
+		"./fr-ch.js": 343,
+		"./fr.js": 341,
+		"./fy": 344,
+		"./fy.js": 344,
+		"./gd": 345,
+		"./gd.js": 345,
+		"./gl": 346,
+		"./gl.js": 346,
+		"./he": 347,
+		"./he.js": 347,
+		"./hi": 348,
+		"./hi.js": 348,
+		"./hr": 349,
+		"./hr.js": 349,
+		"./hu": 350,
+		"./hu.js": 350,
+		"./hy-am": 351,
+		"./hy-am.js": 351,
+		"./id": 352,
+		"./id.js": 352,
+		"./is": 353,
+		"./is.js": 353,
+		"./it": 354,
+		"./it.js": 354,
+		"./ja": 355,
+		"./ja.js": 355,
+		"./jv": 356,
+		"./jv.js": 356,
+		"./ka": 357,
+		"./ka.js": 357,
+		"./kk": 358,
+		"./kk.js": 358,
+		"./km": 359,
+		"./km.js": 359,
+		"./ko": 360,
+		"./ko.js": 360,
+		"./ky": 361,
+		"./ky.js": 361,
+		"./lb": 362,
+		"./lb.js": 362,
+		"./lo": 363,
+		"./lo.js": 363,
+		"./lt": 364,
+		"./lt.js": 364,
+		"./lv": 365,
+		"./lv.js": 365,
+		"./me": 366,
+		"./me.js": 366,
+		"./mi": 367,
+		"./mi.js": 367,
+		"./mk": 368,
+		"./mk.js": 368,
+		"./ml": 369,
+		"./ml.js": 369,
+		"./mr": 370,
+		"./mr.js": 370,
+		"./ms": 371,
+		"./ms-my": 372,
+		"./ms-my.js": 372,
+		"./ms.js": 371,
+		"./my": 373,
+		"./my.js": 373,
+		"./nb": 374,
+		"./nb.js": 374,
+		"./ne": 375,
+		"./ne.js": 375,
+		"./nl": 376,
+		"./nl-be": 377,
+		"./nl-be.js": 377,
+		"./nl.js": 376,
+		"./nn": 378,
+		"./nn.js": 378,
+		"./pa-in": 379,
+		"./pa-in.js": 379,
+		"./pl": 380,
+		"./pl.js": 380,
+		"./pt": 381,
+		"./pt-br": 382,
+		"./pt-br.js": 382,
+		"./pt.js": 381,
+		"./ro": 383,
+		"./ro.js": 383,
+		"./ru": 384,
+		"./ru.js": 384,
+		"./se": 385,
+		"./se.js": 385,
+		"./si": 386,
+		"./si.js": 386,
+		"./sk": 387,
+		"./sk.js": 387,
+		"./sl": 388,
+		"./sl.js": 388,
+		"./sq": 389,
+		"./sq.js": 389,
+		"./sr": 390,
+		"./sr-cyrl": 391,
+		"./sr-cyrl.js": 391,
+		"./sr.js": 390,
+		"./ss": 392,
+		"./ss.js": 392,
+		"./sv": 393,
+		"./sv.js": 393,
+		"./sw": 394,
+		"./sw.js": 394,
+		"./ta": 395,
+		"./ta.js": 395,
+		"./te": 396,
+		"./te.js": 396,
+		"./tet": 397,
+		"./tet.js": 397,
+		"./th": 398,
+		"./th.js": 398,
+		"./tl-ph": 399,
+		"./tl-ph.js": 399,
+		"./tlh": 400,
+		"./tlh.js": 400,
+		"./tr": 401,
+		"./tr.js": 401,
+		"./tzl": 402,
+		"./tzl.js": 402,
+		"./tzm": 403,
+		"./tzm-latn": 404,
+		"./tzm-latn.js": 404,
+		"./tzm.js": 403,
+		"./uk": 405,
+		"./uk.js": 405,
+		"./uz": 406,
+		"./uz.js": 406,
+		"./vi": 407,
+		"./vi.js": 407,
+		"./x-pseudo": 408,
+		"./x-pseudo.js": 408,
+		"./yo": 409,
+		"./yo.js": 409,
+		"./zh-cn": 410,
+		"./zh-cn.js": 410,
+		"./zh-hk": 411,
+		"./zh-hk.js": 411,
+		"./zh-tw": 412,
+		"./zh-tw.js": 412
 	};
 	function webpackContext(req) {
 		return __webpack_require__(webpackContextResolve(req));
@@ -23718,9 +23469,9 @@
 	webpackContext.id = 304;
 
 
-/***/ }),
+/***/ },
 /* 305 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Afrikaans [af]
@@ -23781,7 +23532,7 @@
 	        y : '\'n jaar',
 	        yy : '%d jaar'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(ste|de)/,
+	    ordinalParse: /\d{1,2}(ste|de)/,
 	    ordinal : function (number) {
 	        return number + ((number === 1 || number === 8 || number >= 20) ? 'ste' : 'de'); // Thanks to Joris Röling : https://github.com/jjupiter
 	    },
@@ -23796,9 +23547,9 @@
 	})));
 
 
-/***/ }),
+/***/ },
 /* 306 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Arabic [ar]
@@ -23943,9 +23694,9 @@
 	})));
 
 
-/***/ }),
+/***/ },
 /* 307 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Arabic (Algeria) [ar-dz]
@@ -24007,73 +23758,9 @@
 	})));
 
 
-/***/ }),
+/***/ },
 /* 308 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	//! moment.js locale configuration
-	//! locale : Arabic (Kuwait) [ar-kw]
-	//! author : Nusret Parlak: https://github.com/nusretparlak
-	
-	;(function (global, factory) {
-	    true ? factory(__webpack_require__(302)) :
-	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
-	   factory(global.moment)
-	}(this, (function (moment) { 'use strict';
-	
-	
-	var arKw = moment.defineLocale('ar-kw', {
-	    months : 'يناير_فبراير_مارس_أبريل_ماي_يونيو_يوليوز_غشت_شتنبر_أكتوبر_نونبر_دجنبر'.split('_'),
-	    monthsShort : 'يناير_فبراير_مارس_أبريل_ماي_يونيو_يوليوز_غشت_شتنبر_أكتوبر_نونبر_دجنبر'.split('_'),
-	    weekdays : 'الأحد_الإتنين_الثلاثاء_الأربعاء_الخميس_الجمعة_السبت'.split('_'),
-	    weekdaysShort : 'احد_اتنين_ثلاثاء_اربعاء_خميس_جمعة_سبت'.split('_'),
-	    weekdaysMin : 'ح_ن_ث_ر_خ_ج_س'.split('_'),
-	    weekdaysParseExact : true,
-	    longDateFormat : {
-	        LT : 'HH:mm',
-	        LTS : 'HH:mm:ss',
-	        L : 'DD/MM/YYYY',
-	        LL : 'D MMMM YYYY',
-	        LLL : 'D MMMM YYYY HH:mm',
-	        LLLL : 'dddd D MMMM YYYY HH:mm'
-	    },
-	    calendar : {
-	        sameDay: '[اليوم على الساعة] LT',
-	        nextDay: '[غدا على الساعة] LT',
-	        nextWeek: 'dddd [على الساعة] LT',
-	        lastDay: '[أمس على الساعة] LT',
-	        lastWeek: 'dddd [على الساعة] LT',
-	        sameElse: 'L'
-	    },
-	    relativeTime : {
-	        future : 'في %s',
-	        past : 'منذ %s',
-	        s : 'ثوان',
-	        m : 'دقيقة',
-	        mm : '%d دقائق',
-	        h : 'ساعة',
-	        hh : '%d ساعات',
-	        d : 'يوم',
-	        dd : '%d أيام',
-	        M : 'شهر',
-	        MM : '%d أشهر',
-	        y : 'سنة',
-	        yy : '%d سنوات'
-	    },
-	    week : {
-	        dow : 0, // Sunday is the first day of the week.
-	        doy : 12  // The week that contains Jan 1st is the first week of the year.
-	    }
-	});
-	
-	return arKw;
-	
-	})));
-
-
-/***/ }),
-/* 309 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Arabic (Lybia) [ar-ly]
@@ -24202,9 +23889,9 @@
 	})));
 
 
-/***/ }),
-/* 310 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 309 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Arabic (Morocco) [ar-ma]
@@ -24267,9 +23954,9 @@
 	})));
 
 
-/***/ }),
-/* 311 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 310 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Arabic (Saudi Arabia) [ar-sa]
@@ -24377,9 +24064,9 @@
 	})));
 
 
-/***/ }),
-/* 312 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 311 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale  :  Arabic (Tunisia) [ar-tn]
@@ -24441,9 +24128,9 @@
 	})));
 
 
-/***/ }),
-/* 313 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 312 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Azerbaijani [az]
@@ -24530,7 +24217,7 @@
 	            return 'axşam';
 	        }
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}-(ıncı|inci|nci|üncü|ncı|uncu)/,
+	    ordinalParse: /\d{1,2}-(ıncı|inci|nci|üncü|ncı|uncu)/,
 	    ordinal : function (number) {
 	        if (number === 0) {  // special case for zero
 	            return number + '-ıncı';
@@ -24551,9 +24238,9 @@
 	})));
 
 
-/***/ }),
-/* 314 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 313 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Belarusian [be]
@@ -24664,7 +24351,7 @@
 	            return 'вечара';
 	        }
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}-(і|ы|га)/,
+	    ordinalParse: /\d{1,2}-(і|ы|га)/,
 	    ordinal: function (number, period) {
 	        switch (period) {
 	            case 'M':
@@ -24690,9 +24377,9 @@
 	})));
 
 
-/***/ }),
-/* 315 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 314 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Bulgarian [bg]
@@ -24754,7 +24441,7 @@
 	        y : 'година',
 	        yy : '%d години'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}-(ев|ен|ти|ви|ри|ми)/,
+	    ordinalParse: /\d{1,2}-(ев|ен|ти|ви|ри|ми)/,
 	    ordinal : function (number) {
 	        var lastDigit = number % 10,
 	            last2Digits = number % 100;
@@ -24785,9 +24472,9 @@
 	})));
 
 
-/***/ }),
-/* 316 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 315 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Bengali [bn]
@@ -24909,9 +24596,9 @@
 	})));
 
 
-/***/ }),
-/* 317 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 316 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Tibetan [bo]
@@ -25033,9 +24720,9 @@
 	})));
 
 
-/***/ }),
-/* 318 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 317 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Breton [br]
@@ -25130,7 +24817,7 @@
 	        y : 'ur bloaz',
 	        yy : specialMutationForYears
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(añ|vet)/,
+	    ordinalParse: /\d{1,2}(añ|vet)/,
 	    ordinal : function (number) {
 	        var output = (number === 1) ? 'añ' : 'vet';
 	        return number + output;
@@ -25146,9 +24833,9 @@
 	})));
 
 
-/***/ }),
-/* 319 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 318 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Bosnian [bs]
@@ -25281,7 +24968,7 @@
 	        y      : 'godinu',
 	        yy     : translate
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -25294,9 +24981,9 @@
 	})));
 
 
-/***/ }),
-/* 320 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 319 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Catalan [ca]
@@ -25310,12 +24997,8 @@
 	
 	
 	var ca = moment.defineLocale('ca', {
-	    months : {
-	        standalone: 'gener_febrer_març_abril_maig_juny_juliol_agost_setembre_octubre_novembre_desembre'.split('_'),
-	        format: 'de gener_de febrer_de març_d\'abril_de maig_de juny_de juliol_d\'agost_de setembre_d\'octubre_de novembre_de desembre'.split('_'),
-	        isFormat: /D[oD]?(\s)+MMMM/
-	    },
-	    monthsShort : 'gen._febr._març_abr._maig_juny_jul._ag._set._oct._nov._des.'.split('_'),
+	    months : 'gener_febrer_març_abril_maig_juny_juliol_agost_setembre_octubre_novembre_desembre'.split('_'),
+	    monthsShort : 'gen._febr._mar._abr._mai._jun._jul._ag._set._oct._nov._des.'.split('_'),
 	    monthsParseExact : true,
 	    weekdays : 'diumenge_dilluns_dimarts_dimecres_dijous_divendres_dissabte'.split('_'),
 	    weekdaysShort : 'dg._dl._dt._dc._dj._dv._ds.'.split('_'),
@@ -25325,12 +25008,9 @@
 	        LT : 'H:mm',
 	        LTS : 'H:mm:ss',
 	        L : 'DD/MM/YYYY',
-	        LL : '[el] D MMMM [de] YYYY',
-	        ll : 'D MMM YYYY',
-	        LLL : '[el] D MMMM [de] YYYY [a les] H:mm',
-	        lll : 'D MMM YYYY, H:mm',
-	        LLLL : '[el] dddd D MMMM [de] YYYY [a les] H:mm',
-	        llll : 'ddd D MMM YYYY, H:mm'
+	        LL : 'D MMMM YYYY',
+	        LLL : 'D MMMM YYYY H:mm',
+	        LLLL : 'dddd D MMMM YYYY H:mm'
 	    },
 	    calendar : {
 	        sameDay : function () {
@@ -25365,7 +25045,7 @@
 	        y : 'un any',
 	        yy : '%d anys'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(r|n|t|è|a)/,
+	    ordinalParse: /\d{1,2}(r|n|t|è|a)/,
 	    ordinal : function (number, period) {
 	        var output = (number === 1) ? 'r' :
 	            (number === 2) ? 'n' :
@@ -25387,9 +25067,9 @@
 	})));
 
 
-/***/ }),
-/* 321 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 320 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Czech [cs]
@@ -25551,7 +25231,7 @@
 	        y : translate,
 	        yy : translate
 	    },
-	    dayOfMonthOrdinalParse : /\d{1,2}\./,
+	    ordinalParse : /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -25564,9 +25244,9 @@
 	})));
 
 
-/***/ }),
-/* 322 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 321 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Chuvash [cv]
@@ -25619,7 +25299,7 @@
 	        y : 'пӗр ҫул',
 	        yy : '%d ҫул'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}-мӗш/,
+	    ordinalParse: /\d{1,2}-мӗш/,
 	    ordinal : '%d-мӗш',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -25632,9 +25312,9 @@
 	})));
 
 
-/***/ }),
-/* 323 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 322 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Welsh [cy]
@@ -25687,7 +25367,7 @@
 	        y: 'blwyddyn',
 	        yy: '%d flynedd'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(fed|ain|af|il|ydd|ed|eg)/,
+	    ordinalParse: /\d{1,2}(fed|ain|af|il|ydd|ed|eg)/,
 	    // traditional ordinal numbers above 31 are not commonly used in colloquial Welsh
 	    ordinal: function (number) {
 	        var b = number,
@@ -25718,9 +25398,9 @@
 	})));
 
 
-/***/ }),
-/* 324 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 323 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Danish [da]
@@ -25745,14 +25425,14 @@
 	        L : 'DD/MM/YYYY',
 	        LL : 'D. MMMM YYYY',
 	        LLL : 'D. MMMM YYYY HH:mm',
-	        LLLL : 'dddd [d.] D. MMMM YYYY [kl.] HH:mm'
+	        LLLL : 'dddd [d.] D. MMMM YYYY HH:mm'
 	    },
 	    calendar : {
-	        sameDay : '[i dag kl.] LT',
-	        nextDay : '[i morgen kl.] LT',
-	        nextWeek : 'på dddd [kl.] LT',
-	        lastDay : '[i går kl.] LT',
-	        lastWeek : '[i] dddd[s kl.] LT',
+	        sameDay : '[I dag kl.] LT',
+	        nextDay : '[I morgen kl.] LT',
+	        nextWeek : 'dddd [kl.] LT',
+	        lastDay : '[I går kl.] LT',
+	        lastWeek : '[sidste] dddd [kl] LT',
 	        sameElse : 'L'
 	    },
 	    relativeTime : {
@@ -25770,7 +25450,7 @@
 	        y : 'et år',
 	        yy : '%d år'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -25783,9 +25463,9 @@
 	})));
 
 
-/***/ }),
-/* 325 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 324 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : German [de]
@@ -25853,7 +25533,7 @@
 	        y : processRelativeTime,
 	        yy : processRelativeTime
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -25866,9 +25546,9 @@
 	})));
 
 
-/***/ }),
-/* 326 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 325 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : German (Austria) [de-at]
@@ -25937,7 +25617,7 @@
 	        y : processRelativeTime,
 	        yy : processRelativeTime
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -25950,92 +25630,9 @@
 	})));
 
 
-/***/ }),
-/* 327 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	//! moment.js locale configuration
-	//! locale : German (Switzerland) [de-ch]
-	//! author : sschueller : https://github.com/sschueller
-	
-	;(function (global, factory) {
-	    true ? factory(__webpack_require__(302)) :
-	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
-	   factory(global.moment)
-	}(this, (function (moment) { 'use strict';
-	
-	
-	// based on: https://www.bk.admin.ch/dokumentation/sprachen/04915/05016/index.html?lang=de#
-	
-	function processRelativeTime(number, withoutSuffix, key, isFuture) {
-	    var format = {
-	        'm': ['eine Minute', 'einer Minute'],
-	        'h': ['eine Stunde', 'einer Stunde'],
-	        'd': ['ein Tag', 'einem Tag'],
-	        'dd': [number + ' Tage', number + ' Tagen'],
-	        'M': ['ein Monat', 'einem Monat'],
-	        'MM': [number + ' Monate', number + ' Monaten'],
-	        'y': ['ein Jahr', 'einem Jahr'],
-	        'yy': [number + ' Jahre', number + ' Jahren']
-	    };
-	    return withoutSuffix ? format[key][0] : format[key][1];
-	}
-	
-	var deCh = moment.defineLocale('de-ch', {
-	    months : 'Januar_Februar_März_April_Mai_Juni_Juli_August_September_Oktober_November_Dezember'.split('_'),
-	    monthsShort : 'Jan._Febr._März_April_Mai_Juni_Juli_Aug._Sept._Okt._Nov._Dez.'.split('_'),
-	    monthsParseExact : true,
-	    weekdays : 'Sonntag_Montag_Dienstag_Mittwoch_Donnerstag_Freitag_Samstag'.split('_'),
-	    weekdaysShort : 'So_Mo_Di_Mi_Do_Fr_Sa'.split('_'),
-	    weekdaysMin : 'So_Mo_Di_Mi_Do_Fr_Sa'.split('_'),
-	    weekdaysParseExact : true,
-	    longDateFormat : {
-	        LT: 'HH.mm',
-	        LTS: 'HH.mm.ss',
-	        L : 'DD.MM.YYYY',
-	        LL : 'D. MMMM YYYY',
-	        LLL : 'D. MMMM YYYY HH.mm',
-	        LLLL : 'dddd, D. MMMM YYYY HH.mm'
-	    },
-	    calendar : {
-	        sameDay: '[heute um] LT [Uhr]',
-	        sameElse: 'L',
-	        nextDay: '[morgen um] LT [Uhr]',
-	        nextWeek: 'dddd [um] LT [Uhr]',
-	        lastDay: '[gestern um] LT [Uhr]',
-	        lastWeek: '[letzten] dddd [um] LT [Uhr]'
-	    },
-	    relativeTime : {
-	        future : 'in %s',
-	        past : 'vor %s',
-	        s : 'ein paar Sekunden',
-	        m : processRelativeTime,
-	        mm : '%d Minuten',
-	        h : processRelativeTime,
-	        hh : '%d Stunden',
-	        d : processRelativeTime,
-	        dd : processRelativeTime,
-	        M : processRelativeTime,
-	        MM : processRelativeTime,
-	        y : processRelativeTime,
-	        yy : processRelativeTime
-	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
-	    ordinal : '%d.',
-	    week : {
-	        dow : 1, // Monday is the first day of the week.
-	        doy : 4  // The week that contains Jan 4th is the first week of the year.
-	    }
-	});
-	
-	return deCh;
-	
-	})));
-
-
-/***/ }),
-/* 328 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 326 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Maldivian [dv]
@@ -26138,9 +25735,9 @@
 	})));
 
 
-/***/ }),
-/* 329 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 327 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Greek [el]
@@ -26161,9 +25758,7 @@
 	    monthsNominativeEl : 'Ιανουάριος_Φεβρουάριος_Μάρτιος_Απρίλιος_Μάιος_Ιούνιος_Ιούλιος_Αύγουστος_Σεπτέμβριος_Οκτώβριος_Νοέμβριος_Δεκέμβριος'.split('_'),
 	    monthsGenitiveEl : 'Ιανουαρίου_Φεβρουαρίου_Μαρτίου_Απριλίου_Μαΐου_Ιουνίου_Ιουλίου_Αυγούστου_Σεπτεμβρίου_Οκτωβρίου_Νοεμβρίου_Δεκεμβρίου'.split('_'),
 	    months : function (momentToFormat, format) {
-	        if (!momentToFormat) {
-	            return this._monthsNominativeEl;
-	        } else if (/D/.test(format.substring(0, format.indexOf('MMMM')))) { // if there is a day number before 'MMMM'
+	        if (/D/.test(format.substring(0, format.indexOf('MMMM')))) { // if there is a day number before 'MMMM'
 	            return this._monthsGenitiveEl[momentToFormat.month()];
 	        } else {
 	            return this._monthsNominativeEl[momentToFormat.month()];
@@ -26230,7 +25825,7 @@
 	        y : 'ένας χρόνος',
 	        yy : '%d χρόνια'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}η/,
+	    ordinalParse: /\d{1,2}η/,
 	    ordinal: '%dη',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -26243,9 +25838,9 @@
 	})));
 
 
-/***/ }),
-/* 330 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 328 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : English (Australia) [en-au]
@@ -26295,7 +25890,7 @@
 	        y : 'a year',
 	        yy : '%d years'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(st|nd|rd|th)/,
+	    ordinalParse: /\d{1,2}(st|nd|rd|th)/,
 	    ordinal : function (number) {
 	        var b = number % 10,
 	            output = (~~(number % 100 / 10) === 1) ? 'th' :
@@ -26315,9 +25910,9 @@
 	})));
 
 
-/***/ }),
-/* 331 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 329 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : English (Canada) [en-ca]
@@ -26367,7 +25962,7 @@
 	        y : 'a year',
 	        yy : '%d years'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(st|nd|rd|th)/,
+	    ordinalParse: /\d{1,2}(st|nd|rd|th)/,
 	    ordinal : function (number) {
 	        var b = number % 10,
 	            output = (~~(number % 100 / 10) === 1) ? 'th' :
@@ -26383,9 +25978,9 @@
 	})));
 
 
-/***/ }),
-/* 332 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 330 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : English (United Kingdom) [en-gb]
@@ -26435,7 +26030,7 @@
 	        y : 'a year',
 	        yy : '%d years'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(st|nd|rd|th)/,
+	    ordinalParse: /\d{1,2}(st|nd|rd|th)/,
 	    ordinal : function (number) {
 	        var b = number % 10,
 	            output = (~~(number % 100 / 10) === 1) ? 'th' :
@@ -26455,9 +26050,9 @@
 	})));
 
 
-/***/ }),
-/* 333 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 331 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : English (Ireland) [en-ie]
@@ -26507,7 +26102,7 @@
 	        y : 'a year',
 	        yy : '%d years'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(st|nd|rd|th)/,
+	    ordinalParse: /\d{1,2}(st|nd|rd|th)/,
 	    ordinal : function (number) {
 	        var b = number % 10,
 	            output = (~~(number % 100 / 10) === 1) ? 'th' :
@@ -26527,9 +26122,9 @@
 	})));
 
 
-/***/ }),
-/* 334 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 332 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : English (New Zealand) [en-nz]
@@ -26579,7 +26174,7 @@
 	        y : 'a year',
 	        yy : '%d years'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(st|nd|rd|th)/,
+	    ordinalParse: /\d{1,2}(st|nd|rd|th)/,
 	    ordinal : function (number) {
 	        var b = number % 10,
 	            output = (~~(number % 100 / 10) === 1) ? 'th' :
@@ -26599,15 +26194,15 @@
 	})));
 
 
-/***/ }),
-/* 335 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 333 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Esperanto [eo]
 	//! author : Colin Dean : https://github.com/colindean
-	//! author : Mia Nordentoft Imperatori : https://github.com/miestasmia
-	//! comment : miestasmia corrected the translation by colindean
+	//! komento: Mi estas malcerta se mi korekte traktis akuzativojn en tiu traduko.
+	//!          Se ne, bonvolu korekti kaj avizi min por ke mi povas lerni!
 	
 	;(function (global, factory) {
 	    true ? factory(__webpack_require__(302)) :
@@ -26619,16 +26214,16 @@
 	var eo = moment.defineLocale('eo', {
 	    months : 'januaro_februaro_marto_aprilo_majo_junio_julio_aŭgusto_septembro_oktobro_novembro_decembro'.split('_'),
 	    monthsShort : 'jan_feb_mar_apr_maj_jun_jul_aŭg_sep_okt_nov_dec'.split('_'),
-	    weekdays : 'dimanĉo_lundo_mardo_merkredo_ĵaŭdo_vendredo_sabato'.split('_'),
-	    weekdaysShort : 'dim_lun_mard_merk_ĵaŭ_ven_sab'.split('_'),
-	    weekdaysMin : 'di_lu_ma_me_ĵa_ve_sa'.split('_'),
+	    weekdays : 'Dimanĉo_Lundo_Mardo_Merkredo_Ĵaŭdo_Vendredo_Sabato'.split('_'),
+	    weekdaysShort : 'Dim_Lun_Mard_Merk_Ĵaŭ_Ven_Sab'.split('_'),
+	    weekdaysMin : 'Di_Lu_Ma_Me_Ĵa_Ve_Sa'.split('_'),
 	    longDateFormat : {
 	        LT : 'HH:mm',
 	        LTS : 'HH:mm:ss',
 	        L : 'YYYY-MM-DD',
-	        LL : 'D[-a de] MMMM, YYYY',
-	        LLL : 'D[-a de] MMMM, YYYY HH:mm',
-	        LLLL : 'dddd, [la] D[-a de] MMMM, YYYY HH:mm'
+	        LL : 'D[-an de] MMMM, YYYY',
+	        LLL : 'D[-an de] MMMM, YYYY HH:mm',
+	        LLLL : 'dddd, [la] D[-an de] MMMM, YYYY HH:mm'
 	    },
 	    meridiemParse: /[ap]\.t\.m/i,
 	    isPM: function (input) {
@@ -26650,7 +26245,7 @@
 	        sameElse : 'L'
 	    },
 	    relativeTime : {
-	        future : 'post %s',
+	        future : 'je %s',
 	        past : 'antaŭ %s',
 	        s : 'sekundoj',
 	        m : 'minuto',
@@ -26664,7 +26259,7 @@
 	        y : 'jaro',
 	        yy : '%d jaroj'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}a/,
+	    ordinalParse: /\d{1,2}a/,
 	    ordinal : '%da',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -26677,9 +26272,9 @@
 	})));
 
 
-/***/ }),
-/* 336 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 334 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Spanish [es]
@@ -26698,9 +26293,7 @@
 	var es = moment.defineLocale('es', {
 	    months : 'enero_febrero_marzo_abril_mayo_junio_julio_agosto_septiembre_octubre_noviembre_diciembre'.split('_'),
 	    monthsShort : function (m, format) {
-	        if (!m) {
-	            return monthsShortDot;
-	        } else if (/-MMM-/.test(format)) {
+	        if (/-MMM-/.test(format)) {
 	            return monthsShort[m.month()];
 	        } else {
 	            return monthsShortDot[m.month()];
@@ -26752,7 +26345,7 @@
 	        y : 'un año',
 	        yy : '%d años'
 	    },
-	    dayOfMonthOrdinalParse : /\d{1,2}º/,
+	    ordinalParse : /\d{1,2}º/,
 	    ordinal : '%dº',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -26765,9 +26358,9 @@
 	})));
 
 
-/***/ }),
-/* 337 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 335 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Spanish (Dominican Republic) [es-do]
@@ -26785,9 +26378,7 @@
 	var esDo = moment.defineLocale('es-do', {
 	    months : 'enero_febrero_marzo_abril_mayo_junio_julio_agosto_septiembre_octubre_noviembre_diciembre'.split('_'),
 	    monthsShort : function (m, format) {
-	        if (!m) {
-	            return monthsShortDot;
-	        } else if (/-MMM-/.test(format)) {
+	        if (/-MMM-/.test(format)) {
 	            return monthsShort[m.month()];
 	        } else {
 	            return monthsShortDot[m.month()];
@@ -26839,7 +26430,7 @@
 	        y : 'un año',
 	        yy : '%d años'
 	    },
-	    dayOfMonthOrdinalParse : /\d{1,2}º/,
+	    ordinalParse : /\d{1,2}º/,
 	    ordinal : '%dº',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -26852,9 +26443,9 @@
 	})));
 
 
-/***/ }),
-/* 338 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 336 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Estonian [et]
@@ -26924,7 +26515,7 @@
 	        y      : processRelativeTime,
 	        yy     : processRelativeTime
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -26937,9 +26528,9 @@
 	})));
 
 
-/***/ }),
-/* 339 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 337 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Basque [eu]
@@ -26995,7 +26586,7 @@
 	        y : 'urte bat',
 	        yy : '%d urte'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -27008,9 +26599,9 @@
 	})));
 
 
-/***/ }),
-/* 340 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 338 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Persian [fa]
@@ -27085,7 +26676,7 @@
 	    relativeTime : {
 	        future : 'در %s',
 	        past : '%s پیش',
-	        s : 'چند ثانیه',
+	        s : 'چندین ثانیه',
 	        m : 'یک دقیقه',
 	        mm : '%d دقیقه',
 	        h : 'یک ساعت',
@@ -27107,7 +26698,7 @@
 	            return symbolMap[match];
 	        }).replace(/,/g, '،');
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}م/,
+	    ordinalParse: /\d{1,2}م/,
 	    ordinal : '%dم',
 	    week : {
 	        dow : 6, // Saturday is the first day of the week.
@@ -27120,9 +26711,9 @@
 	})));
 
 
-/***/ }),
-/* 341 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 339 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Finnish [fi]
@@ -27219,7 +26810,7 @@
 	        y : translate,
 	        yy : translate
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -27232,9 +26823,9 @@
 	})));
 
 
-/***/ }),
-/* 342 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 340 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Faroese [fo]
@@ -27284,7 +26875,7 @@
 	        y : 'eitt ár',
 	        yy : '%d ár'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -27297,9 +26888,9 @@
 	})));
 
 
-/***/ }),
-/* 343 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 341 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : French [fr]
@@ -27329,12 +26920,12 @@
 	        LLLL : 'dddd D MMMM YYYY HH:mm'
 	    },
 	    calendar : {
-	        sameDay : '[Aujourd’hui à] LT',
-	        nextDay : '[Demain à] LT',
-	        nextWeek : 'dddd [à] LT',
-	        lastDay : '[Hier à] LT',
-	        lastWeek : 'dddd [dernier à] LT',
-	        sameElse : 'L'
+	        sameDay: '[Aujourd\'hui à] LT',
+	        nextDay: '[Demain à] LT',
+	        nextWeek: 'dddd [à] LT',
+	        lastDay: '[Hier à] LT',
+	        lastWeek: 'dddd [dernier à] LT',
+	        sameElse: 'L'
 	    },
 	    relativeTime : {
 	        future : 'dans %s',
@@ -27351,28 +26942,9 @@
 	        y : 'un an',
 	        yy : '%d ans'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(er|)/,
-	    ordinal : function (number, period) {
-	        switch (period) {
-	            // TODO: Return 'e' when day of month > 1. Move this case inside
-	            // block for masculine words below.
-	            // See https://github.com/moment/moment/issues/3375
-	            case 'D':
-	                return number + (number === 1 ? 'er' : '');
-	
-	            // Words with masculine grammatical gender: mois, trimestre, jour
-	            default:
-	            case 'M':
-	            case 'Q':
-	            case 'DDD':
-	            case 'd':
-	                return number + (number === 1 ? 'er' : 'e');
-	
-	            // Words with feminine grammatical gender: semaine
-	            case 'w':
-	            case 'W':
-	                return number + (number === 1 ? 're' : 'e');
-	        }
+	    ordinalParse: /\d{1,2}(er|)/,
+	    ordinal : function (number) {
+	        return number + (number === 1 ? 'er' : '');
 	    },
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -27385,9 +26957,9 @@
 	})));
 
 
-/***/ }),
-/* 344 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 342 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : French (Canada) [fr-ca]
@@ -27417,12 +26989,12 @@
 	        LLLL : 'dddd D MMMM YYYY HH:mm'
 	    },
 	    calendar : {
-	        sameDay : '[Aujourd’hui à] LT',
-	        nextDay : '[Demain à] LT',
-	        nextWeek : 'dddd [à] LT',
-	        lastDay : '[Hier à] LT',
-	        lastWeek : 'dddd [dernier à] LT',
-	        sameElse : 'L'
+	        sameDay: '[Aujourd\'hui à] LT',
+	        nextDay: '[Demain à] LT',
+	        nextWeek: 'dddd [à] LT',
+	        lastDay: '[Hier à] LT',
+	        lastWeek: 'dddd [dernier à] LT',
+	        sameElse: 'L'
 	    },
 	    relativeTime : {
 	        future : 'dans %s',
@@ -27439,23 +27011,9 @@
 	        y : 'un an',
 	        yy : '%d ans'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(er|e)/,
-	    ordinal : function (number, period) {
-	        switch (period) {
-	            // Words with masculine grammatical gender: mois, trimestre, jour
-	            default:
-	            case 'M':
-	            case 'Q':
-	            case 'D':
-	            case 'DDD':
-	            case 'd':
-	                return number + (number === 1 ? 'er' : 'e');
-	
-	            // Words with feminine grammatical gender: semaine
-	            case 'w':
-	            case 'W':
-	                return number + (number === 1 ? 're' : 'e');
-	        }
+	    ordinalParse: /\d{1,2}(er|e)/,
+	    ordinal : function (number) {
+	        return number + (number === 1 ? 'er' : 'e');
 	    }
 	});
 	
@@ -27464,9 +27022,9 @@
 	})));
 
 
-/***/ }),
-/* 345 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 343 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : French (Switzerland) [fr-ch]
@@ -27496,12 +27054,12 @@
 	        LLLL : 'dddd D MMMM YYYY HH:mm'
 	    },
 	    calendar : {
-	        sameDay : '[Aujourd’hui à] LT',
-	        nextDay : '[Demain à] LT',
-	        nextWeek : 'dddd [à] LT',
-	        lastDay : '[Hier à] LT',
-	        lastWeek : 'dddd [dernier à] LT',
-	        sameElse : 'L'
+	        sameDay: '[Aujourd\'hui à] LT',
+	        nextDay: '[Demain à] LT',
+	        nextWeek: 'dddd [à] LT',
+	        lastDay: '[Hier à] LT',
+	        lastWeek: 'dddd [dernier à] LT',
+	        sameElse: 'L'
 	    },
 	    relativeTime : {
 	        future : 'dans %s',
@@ -27518,23 +27076,9 @@
 	        y : 'un an',
 	        yy : '%d ans'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(er|e)/,
-	    ordinal : function (number, period) {
-	        switch (period) {
-	            // Words with masculine grammatical gender: mois, trimestre, jour
-	            default:
-	            case 'M':
-	            case 'Q':
-	            case 'D':
-	            case 'DDD':
-	            case 'd':
-	                return number + (number === 1 ? 'er' : 'e');
-	
-	            // Words with feminine grammatical gender: semaine
-	            case 'w':
-	            case 'W':
-	                return number + (number === 1 ? 're' : 'e');
-	        }
+	    ordinalParse: /\d{1,2}(er|e)/,
+	    ordinal : function (number) {
+	        return number + (number === 1 ? 'er' : 'e');
 	    },
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -27547,9 +27091,9 @@
 	})));
 
 
-/***/ }),
-/* 346 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 344 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Frisian [fy]
@@ -27568,9 +27112,7 @@
 	var fy = moment.defineLocale('fy', {
 	    months : 'jannewaris_febrewaris_maart_april_maaie_juny_july_augustus_septimber_oktober_novimber_desimber'.split('_'),
 	    monthsShort : function (m, format) {
-	        if (!m) {
-	            return monthsShortWithDots;
-	        } else if (/-MMM-/.test(format)) {
+	        if (/-MMM-/.test(format)) {
 	            return monthsShortWithoutDots[m.month()];
 	        } else {
 	            return monthsShortWithDots[m.month()];
@@ -27612,7 +27154,7 @@
 	        y : 'ien jier',
 	        yy : '%d jierren'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(ste|de)/,
+	    ordinalParse: /\d{1,2}(ste|de)/,
 	    ordinal : function (number) {
 	        return number + ((number === 1 || number === 8 || number >= 20) ? 'ste' : 'de');
 	    },
@@ -27627,9 +27169,9 @@
 	})));
 
 
-/***/ }),
-/* 347 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 345 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Scottish Gaelic [gd]
@@ -27692,7 +27234,7 @@
 	        y : 'bliadhna',
 	        yy : '%d bliadhna'
 	    },
-	    dayOfMonthOrdinalParse : /\d{1,2}(d|na|mh)/,
+	    ordinalParse : /\d{1,2}(d|na|mh)/,
 	    ordinal : function (number) {
 	        var output = number === 1 ? 'd' : number % 10 === 2 ? 'na' : 'mh';
 	        return number + output;
@@ -27708,9 +27250,9 @@
 	})));
 
 
-/***/ }),
-/* 348 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 346 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Galician [gl]
@@ -27777,7 +27319,7 @@
 	        y : 'un ano',
 	        yy : '%d anos'
 	    },
-	    dayOfMonthOrdinalParse : /\d{1,2}º/,
+	    ordinalParse : /\d{1,2}º/,
 	    ordinal : '%dº',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -27790,136 +27332,9 @@
 	})));
 
 
-/***/ }),
-/* 349 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	//! moment.js locale configuration
-	//! locale : Konkani Latin script [gom-latn]
-	//! author : The Discoverer : https://github.com/WikiDiscoverer
-	
-	;(function (global, factory) {
-	    true ? factory(__webpack_require__(302)) :
-	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
-	   factory(global.moment)
-	}(this, (function (moment) { 'use strict';
-	
-	
-	function processRelativeTime(number, withoutSuffix, key, isFuture) {
-	    var format = {
-	        's': ['thodde secondanim', 'thodde second'],
-	        'm': ['eka mintan', 'ek minute'],
-	        'mm': [number + ' mintanim', number + ' mintam'],
-	        'h': ['eka horan', 'ek hor'],
-	        'hh': [number + ' horanim', number + ' hor'],
-	        'd': ['eka disan', 'ek dis'],
-	        'dd': [number + ' disanim', number + ' dis'],
-	        'M': ['eka mhoinean', 'ek mhoino'],
-	        'MM': [number + ' mhoineanim', number + ' mhoine'],
-	        'y': ['eka vorsan', 'ek voros'],
-	        'yy': [number + ' vorsanim', number + ' vorsam']
-	    };
-	    return withoutSuffix ? format[key][0] : format[key][1];
-	}
-	
-	var gomLatn = moment.defineLocale('gom-latn', {
-	    months : 'Janer_Febrer_Mars_Abril_Mai_Jun_Julai_Agost_Setembr_Otubr_Novembr_Dezembr'.split('_'),
-	    monthsShort : 'Jan._Feb._Mars_Abr._Mai_Jun_Jul._Ago._Set._Otu._Nov._Dez.'.split('_'),
-	    monthsParseExact : true,
-	    weekdays : 'Aitar_Somar_Mongllar_Budvar_Brestar_Sukrar_Son\'var'.split('_'),
-	    weekdaysShort : 'Ait._Som._Mon._Bud._Bre._Suk._Son.'.split('_'),
-	    weekdaysMin : 'Ai_Sm_Mo_Bu_Br_Su_Sn'.split('_'),
-	    weekdaysParseExact : true,
-	    longDateFormat : {
-	        LT : 'A h:mm [vazta]',
-	        LTS : 'A h:mm:ss [vazta]',
-	        L : 'DD-MM-YYYY',
-	        LL : 'D MMMM YYYY',
-	        LLL : 'D MMMM YYYY A h:mm [vazta]',
-	        LLLL : 'dddd, MMMM[achea] Do, YYYY, A h:mm [vazta]',
-	        llll: 'ddd, D MMM YYYY, A h:mm [vazta]'
-	    },
-	    calendar : {
-	        sameDay: '[Aiz] LT',
-	        nextDay: '[Faleam] LT',
-	        nextWeek: '[Ieta to] dddd[,] LT',
-	        lastDay: '[Kal] LT',
-	        lastWeek: '[Fatlo] dddd[,] LT',
-	        sameElse: 'L'
-	    },
-	    relativeTime : {
-	        future : '%s',
-	        past : '%s adim',
-	        s : processRelativeTime,
-	        m : processRelativeTime,
-	        mm : processRelativeTime,
-	        h : processRelativeTime,
-	        hh : processRelativeTime,
-	        d : processRelativeTime,
-	        dd : processRelativeTime,
-	        M : processRelativeTime,
-	        MM : processRelativeTime,
-	        y : processRelativeTime,
-	        yy : processRelativeTime
-	    },
-	    dayOfMonthOrdinalParse : /\d{1,2}(er)/,
-	    ordinal : function (number, period) {
-	        switch (period) {
-	            // the ordinal 'er' only applies to day of the month
-	            case 'D':
-	                return number + 'er';
-	            default:
-	            case 'M':
-	            case 'Q':
-	            case 'DDD':
-	            case 'd':
-	            case 'w':
-	            case 'W':
-	                return number;
-	        }
-	    },
-	    week : {
-	        dow : 1, // Monday is the first day of the week.
-	        doy : 4  // The week that contains Jan 4th is the first week of the year.
-	    },
-	    meridiemParse: /rati|sokalli|donparam|sanje/,
-	    meridiemHour : function (hour, meridiem) {
-	        if (hour === 12) {
-	            hour = 0;
-	        }
-	        if (meridiem === 'rati') {
-	            return hour < 4 ? hour : hour + 12;
-	        } else if (meridiem === 'sokalli') {
-	            return hour;
-	        } else if (meridiem === 'donparam') {
-	            return hour > 12 ? hour : hour + 12;
-	        } else if (meridiem === 'sanje') {
-	            return hour + 12;
-	        }
-	    },
-	    meridiem : function (hour, minute, isLower) {
-	        if (hour < 4) {
-	            return 'rati';
-	        } else if (hour < 12) {
-	            return 'sokalli';
-	        } else if (hour < 16) {
-	            return 'donparam';
-	        } else if (hour < 20) {
-	            return 'sanje';
-	        } else {
-	            return 'rati';
-	        }
-	    }
-	});
-	
-	return gomLatn;
-	
-	})));
-
-
-/***/ }),
-/* 350 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 347 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Hebrew [he]
@@ -28021,9 +27436,9 @@
 	})));
 
 
-/***/ }),
-/* 351 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 348 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Hindi [hi]
@@ -28150,9 +27565,9 @@
 	})));
 
 
-/***/ }),
-/* 352 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 349 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Croatian [hr]
@@ -28287,7 +27702,7 @@
 	        y      : 'godinu',
 	        yy     : translate
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -28300,9 +27715,9 @@
 	})));
 
 
-/***/ }),
-/* 353 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 350 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Hungarian [hu]
@@ -28401,7 +27816,7 @@
 	        y : translate,
 	        yy : translate
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -28414,9 +27829,9 @@
 	})));
 
 
-/***/ }),
-/* 354 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 351 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Armenian [hy-am]
@@ -28488,7 +27903,7 @@
 	            return 'երեկոյան';
 	        }
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}|\d{1,2}-(ին|րդ)/,
+	    ordinalParse: /\d{1,2}|\d{1,2}-(ին|րդ)/,
 	    ordinal: function (number, period) {
 	        switch (period) {
 	            case 'DDD':
@@ -28514,9 +27929,9 @@
 	})));
 
 
-/***/ }),
-/* 355 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 352 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Indonesian [id]
@@ -28602,9 +28017,9 @@
 	})));
 
 
-/***/ }),
-/* 356 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 353 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Icelandic [is]
@@ -28721,7 +28136,7 @@
 	        y : translate,
 	        yy : translate
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -28734,9 +28149,9 @@
 	})));
 
 
-/***/ }),
-/* 357 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 354 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Italian [it]
@@ -28753,9 +28168,9 @@
 	var it = moment.defineLocale('it', {
 	    months : 'gennaio_febbraio_marzo_aprile_maggio_giugno_luglio_agosto_settembre_ottobre_novembre_dicembre'.split('_'),
 	    monthsShort : 'gen_feb_mar_apr_mag_giu_lug_ago_set_ott_nov_dic'.split('_'),
-	    weekdays : 'domenica_lunedì_martedì_mercoledì_giovedì_venerdì_sabato'.split('_'),
-	    weekdaysShort : 'dom_lun_mar_mer_gio_ven_sab'.split('_'),
-	    weekdaysMin : 'do_lu_ma_me_gi_ve_sa'.split('_'),
+	    weekdays : 'Domenica_Lunedì_Martedì_Mercoledì_Giovedì_Venerdì_Sabato'.split('_'),
+	    weekdaysShort : 'Dom_Lun_Mar_Mer_Gio_Ven_Sab'.split('_'),
+	    weekdaysMin : 'Do_Lu_Ma_Me_Gi_Ve_Sa'.split('_'),
 	    longDateFormat : {
 	        LT : 'HH:mm',
 	        LTS : 'HH:mm:ss',
@@ -28796,7 +28211,7 @@
 	        y : 'un anno',
 	        yy : '%d anni'
 	    },
-	    dayOfMonthOrdinalParse : /\d{1,2}º/,
+	    ordinalParse : /\d{1,2}º/,
 	    ordinal: '%dº',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -28809,9 +28224,9 @@
 	})));
 
 
-/***/ }),
-/* 358 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 355 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Japanese [ja]
@@ -28831,16 +28246,12 @@
 	    weekdaysShort : '日_月_火_水_木_金_土'.split('_'),
 	    weekdaysMin : '日_月_火_水_木_金_土'.split('_'),
 	    longDateFormat : {
-	        LT : 'HH:mm',
-	        LTS : 'HH:mm:ss',
+	        LT : 'Ah時m分',
+	        LTS : 'Ah時m分s秒',
 	        L : 'YYYY/MM/DD',
 	        LL : 'YYYY年M月D日',
-	        LLL : 'YYYY年M月D日 HH:mm',
-	        LLLL : 'YYYY年M月D日 HH:mm dddd',
-	        l : 'YYYY/MM/DD',
-	        ll : 'YYYY年M月D日',
-	        lll : 'YYYY年M月D日 HH:mm',
-	        llll : 'YYYY年M月D日 HH:mm dddd'
+	        LLL : 'YYYY年M月D日Ah時m分',
+	        LLLL : 'YYYY年M月D日Ah時m分 dddd'
 	    },
 	    meridiemParse: /午前|午後/i,
 	    isPM : function (input) {
@@ -28861,7 +28272,7 @@
 	        lastWeek : '[前週]dddd LT',
 	        sameElse : 'L'
 	    },
-	    dayOfMonthOrdinalParse : /\d{1,2}日/,
+	    ordinalParse : /\d{1,2}日/,
 	    ordinal : function (number, period) {
 	        switch (period) {
 	            case 'd':
@@ -28894,9 +28305,9 @@
 	})));
 
 
-/***/ }),
-/* 359 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 356 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Javanese [jv]
@@ -28982,9 +28393,9 @@
 	})));
 
 
-/***/ }),
-/* 360 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 357 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Georgian [ka]
@@ -29034,10 +28445,10 @@
 	        },
 	        past : function (s) {
 	            if ((/(წამი|წუთი|საათი|დღე|თვე)/).test(s)) {
-	                return s.replace(/(ი|ე)$/, 'ის უკან');
+	                return s.replace(/(ი|ე)$/, 'ის წინ');
 	            }
 	            if ((/წელი/).test(s)) {
-	                return s.replace(/წელი$/, 'წლის უკან');
+	                return s.replace(/წელი$/, 'წლის წინ');
 	            }
 	        },
 	        s : 'რამდენიმე წამი',
@@ -29052,7 +28463,7 @@
 	        y : 'წელი',
 	        yy : '%d წელი'
 	    },
-	    dayOfMonthOrdinalParse: /0|1-ლი|მე-\d{1,2}|\d{1,2}-ე/,
+	    ordinalParse: /0|1-ლი|მე-\d{1,2}|\d{1,2}-ე/,
 	    ordinal : function (number) {
 	        if (number === 0) {
 	            return number;
@@ -29076,9 +28487,9 @@
 	})));
 
 
-/***/ }),
-/* 361 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 358 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Kazakh [kk]
@@ -29151,7 +28562,7 @@
 	        y : 'бір жыл',
 	        yy : '%d жыл'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}-(ші|шы)/,
+	    ordinalParse: /\d{1,2}-(ші|шы)/,
 	    ordinal : function (number) {
 	        var a = number % 10,
 	            b = number >= 100 ? 100 : null;
@@ -29168,9 +28579,9 @@
 	})));
 
 
-/***/ }),
-/* 362 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 359 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Cambodian [km]
@@ -29231,140 +28642,9 @@
 	})));
 
 
-/***/ }),
-/* 363 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	//! moment.js locale configuration
-	//! locale : Kannada [kn]
-	//! author : Rajeev Naik : https://github.com/rajeevnaikte
-	
-	;(function (global, factory) {
-	    true ? factory(__webpack_require__(302)) :
-	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
-	   factory(global.moment)
-	}(this, (function (moment) { 'use strict';
-	
-	
-	var symbolMap = {
-	    '1': '೧',
-	    '2': '೨',
-	    '3': '೩',
-	    '4': '೪',
-	    '5': '೫',
-	    '6': '೬',
-	    '7': '೭',
-	    '8': '೮',
-	    '9': '೯',
-	    '0': '೦'
-	};
-	var numberMap = {
-	    '೧': '1',
-	    '೨': '2',
-	    '೩': '3',
-	    '೪': '4',
-	    '೫': '5',
-	    '೬': '6',
-	    '೭': '7',
-	    '೮': '8',
-	    '೯': '9',
-	    '೦': '0'
-	};
-	
-	var kn = moment.defineLocale('kn', {
-	    months : 'ಜನವರಿ_ಫೆಬ್ರವರಿ_ಮಾರ್ಚ್_ಏಪ್ರಿಲ್_ಮೇ_ಜೂನ್_ಜುಲೈ_ಆಗಸ್ಟ್_ಸೆಪ್ಟೆಂಬರ್_ಅಕ್ಟೋಬರ್_ನವೆಂಬರ್_ಡಿಸೆಂಬರ್'.split('_'),
-	    monthsShort : 'ಜನ_ಫೆಬ್ರ_ಮಾರ್ಚ್_ಏಪ್ರಿಲ್_ಮೇ_ಜೂನ್_ಜುಲೈ_ಆಗಸ್ಟ್_ಸೆಪ್ಟೆಂಬ_ಅಕ್ಟೋಬ_ನವೆಂಬ_ಡಿಸೆಂಬ'.split('_'),
-	    monthsParseExact: true,
-	    weekdays : 'ಭಾನುವಾರ_ಸೋಮವಾರ_ಮಂಗಳವಾರ_ಬುಧವಾರ_ಗುರುವಾರ_ಶುಕ್ರವಾರ_ಶನಿವಾರ'.split('_'),
-	    weekdaysShort : 'ಭಾನು_ಸೋಮ_ಮಂಗಳ_ಬುಧ_ಗುರು_ಶುಕ್ರ_ಶನಿ'.split('_'),
-	    weekdaysMin : 'ಭಾ_ಸೋ_ಮಂ_ಬು_ಗು_ಶು_ಶ'.split('_'),
-	    longDateFormat : {
-	        LT : 'A h:mm',
-	        LTS : 'A h:mm:ss',
-	        L : 'DD/MM/YYYY',
-	        LL : 'D MMMM YYYY',
-	        LLL : 'D MMMM YYYY, A h:mm',
-	        LLLL : 'dddd, D MMMM YYYY, A h:mm'
-	    },
-	    calendar : {
-	        sameDay : '[ಇಂದು] LT',
-	        nextDay : '[ನಾಳೆ] LT',
-	        nextWeek : 'dddd, LT',
-	        lastDay : '[ನಿನ್ನೆ] LT',
-	        lastWeek : '[ಕೊನೆಯ] dddd, LT',
-	        sameElse : 'L'
-	    },
-	    relativeTime : {
-	        future : '%s ನಂತರ',
-	        past : '%s ಹಿಂದೆ',
-	        s : 'ಕೆಲವು ಕ್ಷಣಗಳು',
-	        m : 'ಒಂದು ನಿಮಿಷ',
-	        mm : '%d ನಿಮಿಷ',
-	        h : 'ಒಂದು ಗಂಟೆ',
-	        hh : '%d ಗಂಟೆ',
-	        d : 'ಒಂದು ದಿನ',
-	        dd : '%d ದಿನ',
-	        M : 'ಒಂದು ತಿಂಗಳು',
-	        MM : '%d ತಿಂಗಳು',
-	        y : 'ಒಂದು ವರ್ಷ',
-	        yy : '%d ವರ್ಷ'
-	    },
-	    preparse: function (string) {
-	        return string.replace(/[೧೨೩೪೫೬೭೮೯೦]/g, function (match) {
-	            return numberMap[match];
-	        });
-	    },
-	    postformat: function (string) {
-	        return string.replace(/\d/g, function (match) {
-	            return symbolMap[match];
-	        });
-	    },
-	    meridiemParse: /ರಾತ್ರಿ|ಬೆಳಿಗ್ಗೆ|ಮಧ್ಯಾಹ್ನ|ಸಂಜೆ/,
-	    meridiemHour : function (hour, meridiem) {
-	        if (hour === 12) {
-	            hour = 0;
-	        }
-	        if (meridiem === 'ರಾತ್ರಿ') {
-	            return hour < 4 ? hour : hour + 12;
-	        } else if (meridiem === 'ಬೆಳಿಗ್ಗೆ') {
-	            return hour;
-	        } else if (meridiem === 'ಮಧ್ಯಾಹ್ನ') {
-	            return hour >= 10 ? hour : hour + 12;
-	        } else if (meridiem === 'ಸಂಜೆ') {
-	            return hour + 12;
-	        }
-	    },
-	    meridiem : function (hour, minute, isLower) {
-	        if (hour < 4) {
-	            return 'ರಾತ್ರಿ';
-	        } else if (hour < 10) {
-	            return 'ಬೆಳಿಗ್ಗೆ';
-	        } else if (hour < 17) {
-	            return 'ಮಧ್ಯಾಹ್ನ';
-	        } else if (hour < 20) {
-	            return 'ಸಂಜೆ';
-	        } else {
-	            return 'ರಾತ್ರಿ';
-	        }
-	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(ನೇ)/,
-	    ordinal : function (number) {
-	        return number + 'ನೇ';
-	    },
-	    week : {
-	        dow : 0, // Sunday is the first day of the week.
-	        doy : 6  // The week that contains Jan 1st is the first week of the year.
-	    }
-	});
-	
-	return kn;
-	
-	})));
-
-
-/***/ }),
-/* 364 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 360 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Korean [ko]
@@ -29385,16 +28665,12 @@
 	    weekdaysShort : '일_월_화_수_목_금_토'.split('_'),
 	    weekdaysMin : '일_월_화_수_목_금_토'.split('_'),
 	    longDateFormat : {
-	        LT : 'A h:mm',
-	        LTS : 'A h:mm:ss',
+	        LT : 'A h시 m분',
+	        LTS : 'A h시 m분 s초',
 	        L : 'YYYY.MM.DD',
 	        LL : 'YYYY년 MMMM D일',
-	        LLL : 'YYYY년 MMMM D일 A h:mm',
-	        LLLL : 'YYYY년 MMMM D일 dddd A h:mm',
-	        l : 'YYYY.MM.DD',
-	        ll : 'YYYY년 MMMM D일',
-	        lll : 'YYYY년 MMMM D일 A h:mm',
-	        llll : 'YYYY년 MMMM D일 dddd A h:mm'
+	        LLL : 'YYYY년 MMMM D일 A h시 m분',
+	        LLLL : 'YYYY년 MMMM D일 dddd A h시 m분'
 	    },
 	    calendar : {
 	        sameDay : '오늘 LT',
@@ -29409,7 +28685,7 @@
 	        past : '%s 전',
 	        s : '몇 초',
 	        ss : '%d초',
-	        m : '1분',
+	        m : '일분',
 	        mm : '%d분',
 	        h : '한 시간',
 	        hh : '%d시간',
@@ -29420,7 +28696,7 @@
 	        y : '일 년',
 	        yy : '%d년'
 	    },
-	    dayOfMonthOrdinalParse : /\d{1,2}일/,
+	    ordinalParse : /\d{1,2}일/,
 	    ordinal : '%d일',
 	    meridiemParse : /오전|오후/,
 	    isPM : function (token) {
@@ -29436,9 +28712,9 @@
 	})));
 
 
-/***/ }),
-/* 365 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 361 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Kyrgyz [ky]
@@ -29512,7 +28788,7 @@
 	        y : 'бир жыл',
 	        yy : '%d жыл'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}-(чи|чы|чү|чу)/,
+	    ordinalParse: /\d{1,2}-(чи|чы|чү|чу)/,
 	    ordinal : function (number) {
 	        var a = number % 10,
 	            b = number >= 100 ? 100 : null;
@@ -29529,9 +28805,9 @@
 	})));
 
 
-/***/ }),
-/* 366 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 362 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Luxembourgish [lb]
@@ -29658,7 +28934,7 @@
 	        y : processRelativeTime,
 	        yy : '%d Joer'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal: '%d.',
 	    week: {
 	        dow: 1, // Monday is the first day of the week.
@@ -29671,9 +28947,9 @@
 	})));
 
 
-/***/ }),
-/* 367 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 363 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Lao [lo]
@@ -29735,7 +29011,7 @@
 	        y : '1 ປີ',
 	        yy : '%d ປີ'
 	    },
-	    dayOfMonthOrdinalParse: /(ທີ່)\d{1,2}/,
+	    ordinalParse: /(ທີ່)\d{1,2}/,
 	    ordinal : function (number) {
 	        return 'ທີ່' + number;
 	    }
@@ -29746,9 +29022,9 @@
 	})));
 
 
-/***/ }),
-/* 368 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 364 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Lithuanian [lt]
@@ -29853,7 +29129,7 @@
 	        y : translateSingular,
 	        yy : translate
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}-oji/,
+	    ordinalParse: /\d{1,2}-oji/,
 	    ordinal : function (number) {
 	        return number + '-oji';
 	    },
@@ -29868,9 +29144,9 @@
 	})));
 
 
-/***/ }),
-/* 369 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 365 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Latvian [lv]
@@ -29957,7 +29233,7 @@
 	        y : relativeTimeWithSingular,
 	        yy : relativeTimeWithPlural
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -29970,9 +29246,9 @@
 	})));
 
 
-/***/ }),
-/* 370 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 366 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Montenegrin [me]
@@ -30073,7 +29349,7 @@
 	        y      : 'godinu',
 	        yy     : translator.translate
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -30086,9 +29362,9 @@
 	})));
 
 
-/***/ }),
-/* 371 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 367 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Maori [mi]
@@ -30142,7 +29418,7 @@
 	        y: 'he tau',
 	        yy: '%d tau'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}º/,
+	    ordinalParse: /\d{1,2}º/,
 	    ordinal: '%dº',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -30155,9 +29431,9 @@
 	})));
 
 
-/***/ }),
-/* 372 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 368 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Macedonian [mk]
@@ -30219,7 +29495,7 @@
 	        y : 'година',
 	        yy : '%d години'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}-(ев|ен|ти|ви|ри|ми)/,
+	    ordinalParse: /\d{1,2}-(ев|ен|ти|ви|ри|ми)/,
 	    ordinal : function (number) {
 	        var lastDigit = number % 10,
 	            last2Digits = number % 100;
@@ -30250,9 +29526,9 @@
 	})));
 
 
-/***/ }),
-/* 373 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 369 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Malayalam [ml]
@@ -30336,9 +29612,9 @@
 	})));
 
 
-/***/ }),
-/* 374 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 370 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Marathi [mr]
@@ -30500,9 +29776,9 @@
 	})));
 
 
-/***/ }),
-/* 375 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 371 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Malay [ms]
@@ -30587,9 +29863,9 @@
 	})));
 
 
-/***/ }),
-/* 376 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 372 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Malay [ms-my]
@@ -30675,9 +29951,9 @@
 	})));
 
 
-/***/ }),
-/* 377 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 373 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Burmese [my]
@@ -30776,9 +30052,9 @@
 	})));
 
 
-/***/ }),
-/* 378 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 374 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Norwegian Bokmål [nb]
@@ -30831,7 +30107,7 @@
 	        y : 'ett år',
 	        yy : '%d år'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -30844,9 +30120,9 @@
 	})));
 
 
-/***/ }),
-/* 379 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 375 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Nepalese [ne]
@@ -30972,9 +30248,9 @@
 	})));
 
 
-/***/ }),
-/* 380 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 376 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Dutch [nl]
@@ -30997,9 +30273,7 @@
 	var nl = moment.defineLocale('nl', {
 	    months : 'januari_februari_maart_april_mei_juni_juli_augustus_september_oktober_november_december'.split('_'),
 	    monthsShort : function (m, format) {
-	        if (!m) {
-	            return monthsShortWithDots;
-	        } else if (/-MMM-/.test(format)) {
+	        if (/-MMM-/.test(format)) {
 	            return monthsShortWithoutDots[m.month()];
 	        } else {
 	            return monthsShortWithDots[m.month()];
@@ -31050,7 +30324,7 @@
 	        y : 'één jaar',
 	        yy : '%d jaar'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(ste|de)/,
+	    ordinalParse: /\d{1,2}(ste|de)/,
 	    ordinal : function (number) {
 	        return number + ((number === 1 || number === 8 || number >= 20) ? 'ste' : 'de');
 	    },
@@ -31065,9 +30339,9 @@
 	})));
 
 
-/***/ }),
-/* 381 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 377 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Dutch (Belgium) [nl-be]
@@ -31090,9 +30364,7 @@
 	var nlBe = moment.defineLocale('nl-be', {
 	    months : 'januari_februari_maart_april_mei_juni_juli_augustus_september_oktober_november_december'.split('_'),
 	    monthsShort : function (m, format) {
-	        if (!m) {
-	            return monthsShortWithDots;
-	        } else if (/-MMM-/.test(format)) {
+	        if (/-MMM-/.test(format)) {
 	            return monthsShortWithoutDots[m.month()];
 	        } else {
 	            return monthsShortWithDots[m.month()];
@@ -31143,7 +30415,7 @@
 	        y : 'één jaar',
 	        yy : '%d jaar'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(ste|de)/,
+	    ordinalParse: /\d{1,2}(ste|de)/,
 	    ordinal : function (number) {
 	        return number + ((number === 1 || number === 8 || number >= 20) ? 'ste' : 'de');
 	    },
@@ -31158,9 +30430,9 @@
 	})));
 
 
-/***/ }),
-/* 382 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 378 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Nynorsk [nn]
@@ -31210,7 +30482,7 @@
 	        y : 'eit år',
 	        yy : '%d år'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -31223,9 +30495,9 @@
 	})));
 
 
-/***/ }),
-/* 383 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 379 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Punjabi (India) [pa-in]
@@ -31352,9 +30624,9 @@
 	})));
 
 
-/***/ }),
-/* 384 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 380 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Polish [pl]
@@ -31392,9 +30664,7 @@
 	
 	var pl = moment.defineLocale('pl', {
 	    months : function (momentToFormat, format) {
-	        if (!momentToFormat) {
-	            return monthsNominative;
-	        } else if (format === '') {
+	        if (format === '') {
 	            // Hack: if format empty we know this is used to generate
 	            // RegExp by moment. Give then back both valid forms of months
 	            // in RegExp ready format.
@@ -31451,7 +30721,7 @@
 	        y : 'rok',
 	        yy : translate
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -31464,9 +30734,9 @@
 	})));
 
 
-/***/ }),
-/* 385 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 381 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Portuguese [pt]
@@ -31484,7 +30754,7 @@
 	    monthsShort : 'Jan_Fev_Mar_Abr_Mai_Jun_Jul_Ago_Set_Out_Nov_Dez'.split('_'),
 	    weekdays : 'Domingo_Segunda-Feira_Terça-Feira_Quarta-Feira_Quinta-Feira_Sexta-Feira_Sábado'.split('_'),
 	    weekdaysShort : 'Dom_Seg_Ter_Qua_Qui_Sex_Sáb'.split('_'),
-	    weekdaysMin : 'Do_2ª_3ª_4ª_5ª_6ª_Sá'.split('_'),
+	    weekdaysMin : 'Dom_2ª_3ª_4ª_5ª_6ª_Sáb'.split('_'),
 	    weekdaysParseExact : true,
 	    longDateFormat : {
 	        LT : 'HH:mm',
@@ -31521,7 +30791,7 @@
 	        y : 'um ano',
 	        yy : '%d anos'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}º/,
+	    ordinalParse: /\d{1,2}º/,
 	    ordinal : '%dº',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -31534,9 +30804,9 @@
 	})));
 
 
-/***/ }),
-/* 386 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 382 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Portuguese (Brazil) [pt-br]
@@ -31554,7 +30824,7 @@
 	    monthsShort : 'Jan_Fev_Mar_Abr_Mai_Jun_Jul_Ago_Set_Out_Nov_Dez'.split('_'),
 	    weekdays : 'Domingo_Segunda-feira_Terça-feira_Quarta-feira_Quinta-feira_Sexta-feira_Sábado'.split('_'),
 	    weekdaysShort : 'Dom_Seg_Ter_Qua_Qui_Sex_Sáb'.split('_'),
-	    weekdaysMin : 'Do_2ª_3ª_4ª_5ª_6ª_Sá'.split('_'),
+	    weekdaysMin : 'Dom_2ª_3ª_4ª_5ª_6ª_Sáb'.split('_'),
 	    weekdaysParseExact : true,
 	    longDateFormat : {
 	        LT : 'HH:mm',
@@ -31591,7 +30861,7 @@
 	        y : 'um ano',
 	        yy : '%d anos'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}º/,
+	    ordinalParse: /\d{1,2}º/,
 	    ordinal : '%dº'
 	});
 	
@@ -31600,9 +30870,9 @@
 	})));
 
 
-/***/ }),
-/* 387 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 383 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Romanian [ro]
@@ -31680,9 +30950,9 @@
 	})));
 
 
-/***/ }),
-/* 388 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 384 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Russian [ru]
@@ -31841,7 +31111,7 @@
 	            return 'вечера';
 	        }
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}-(й|го|я)/,
+	    ordinalParse: /\d{1,2}-(й|го|я)/,
 	    ordinal: function (number, period) {
 	        switch (period) {
 	            case 'M':
@@ -31868,112 +31138,9 @@
 	})));
 
 
-/***/ }),
-/* 389 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	//! moment.js locale configuration
-	//! locale : Sindhi [sd]
-	//! author : Narain Sagar : https://github.com/narainsagar
-	
-	;(function (global, factory) {
-	    true ? factory(__webpack_require__(302)) :
-	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
-	   factory(global.moment)
-	}(this, (function (moment) { 'use strict';
-	
-	
-	var months = [
-	    'جنوري',
-	    'فيبروري',
-	    'مارچ',
-	    'اپريل',
-	    'مئي',
-	    'جون',
-	    'جولاءِ',
-	    'آگسٽ',
-	    'سيپٽمبر',
-	    'آڪٽوبر',
-	    'نومبر',
-	    'ڊسمبر'
-	];
-	var days = [
-	    'آچر',
-	    'سومر',
-	    'اڱارو',
-	    'اربع',
-	    'خميس',
-	    'جمع',
-	    'ڇنڇر'
-	];
-	
-	var sd = moment.defineLocale('sd', {
-	    months : months,
-	    monthsShort : months,
-	    weekdays : days,
-	    weekdaysShort : days,
-	    weekdaysMin : days,
-	    longDateFormat : {
-	        LT : 'HH:mm',
-	        LTS : 'HH:mm:ss',
-	        L : 'DD/MM/YYYY',
-	        LL : 'D MMMM YYYY',
-	        LLL : 'D MMMM YYYY HH:mm',
-	        LLLL : 'dddd، D MMMM YYYY HH:mm'
-	    },
-	    meridiemParse: /صبح|شام/,
-	    isPM : function (input) {
-	        return 'شام' === input;
-	    },
-	    meridiem : function (hour, minute, isLower) {
-	        if (hour < 12) {
-	            return 'صبح';
-	        }
-	        return 'شام';
-	    },
-	    calendar : {
-	        sameDay : '[اڄ] LT',
-	        nextDay : '[سڀاڻي] LT',
-	        nextWeek : 'dddd [اڳين هفتي تي] LT',
-	        lastDay : '[ڪالهه] LT',
-	        lastWeek : '[گزريل هفتي] dddd [تي] LT',
-	        sameElse : 'L'
-	    },
-	    relativeTime : {
-	        future : '%s پوء',
-	        past : '%s اڳ',
-	        s : 'چند سيڪنڊ',
-	        m : 'هڪ منٽ',
-	        mm : '%d منٽ',
-	        h : 'هڪ ڪلاڪ',
-	        hh : '%d ڪلاڪ',
-	        d : 'هڪ ڏينهن',
-	        dd : '%d ڏينهن',
-	        M : 'هڪ مهينو',
-	        MM : '%d مهينا',
-	        y : 'هڪ سال',
-	        yy : '%d سال'
-	    },
-	    preparse: function (string) {
-	        return string.replace(/،/g, ',');
-	    },
-	    postformat: function (string) {
-	        return string.replace(/,/g, '،');
-	    },
-	    week : {
-	        dow : 1, // Monday is the first day of the week.
-	        doy : 4  // The week that contains Jan 4th is the first week of the year.
-	    }
-	});
-	
-	return sd;
-	
-	})));
-
-
-/***/ }),
-/* 390 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 385 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Northern Sami [se]
@@ -32024,7 +31191,7 @@
 	        y : 'okta jahki',
 	        yy : '%d jagit'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -32037,9 +31204,9 @@
 	})));
 
 
-/***/ }),
-/* 391 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 386 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Sinhalese [si]
@@ -32091,7 +31258,7 @@
 	        y : 'වසර',
 	        yy : 'වසර %d'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2} වැනි/,
+	    ordinalParse: /\d{1,2} වැනි/,
 	    ordinal : function (number) {
 	        return number + ' වැනි';
 	    },
@@ -32113,9 +31280,9 @@
 	})));
 
 
-/***/ }),
-/* 392 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 387 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Slovak [sk]
@@ -32255,7 +31422,7 @@
 	        y : translate,
 	        yy : translate
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -32268,9 +31435,9 @@
 	})));
 
 
-/***/ }),
-/* 393 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 388 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Slovenian [sl]
@@ -32422,7 +31589,7 @@
 	        y      : processRelativeTime,
 	        yy     : processRelativeTime
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -32435,9 +31602,9 @@
 	})));
 
 
-/***/ }),
-/* 394 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 389 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Albanian [sq]
@@ -32497,7 +31664,7 @@
 	        y : 'një vit',
 	        yy : '%d vite'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -32510,9 +31677,9 @@
 	})));
 
 
-/***/ }),
-/* 395 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 390 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Serbian [sr]
@@ -32612,7 +31779,7 @@
 	        y      : 'godinu',
 	        yy     : translator.translate
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -32625,9 +31792,9 @@
 	})));
 
 
-/***/ }),
-/* 396 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 391 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Serbian Cyrillic [sr-cyrl]
@@ -32727,7 +31894,7 @@
 	        y      : 'годину',
 	        yy     : translator.translate
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -32740,9 +31907,9 @@
 	})));
 
 
-/***/ }),
-/* 397 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 392 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : siSwati [ss]
@@ -32821,7 +31988,7 @@
 	            return hour + 12;
 	        }
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}/,
+	    ordinalParse: /\d{1,2}/,
 	    ordinal : '%d',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -32834,9 +32001,9 @@
 	})));
 
 
-/***/ }),
-/* 398 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 393 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Swedish [sv]
@@ -32888,7 +32055,7 @@
 	        y : 'ett år',
 	        yy : '%d år'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(e|a)/,
+	    ordinalParse: /\d{1,2}(e|a)/,
 	    ordinal : function (number) {
 	        var b = number % 10,
 	            output = (~~(number % 100 / 10) === 1) ? 'e' :
@@ -32908,9 +32075,9 @@
 	})));
 
 
-/***/ }),
-/* 399 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 394 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Swahili [sw]
@@ -32972,9 +32139,9 @@
 	})));
 
 
-/***/ }),
-/* 400 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 395 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Tamil [ta]
@@ -33049,7 +32216,7 @@
 	        y : 'ஒரு வருடம்',
 	        yy : '%d ஆண்டுகள்'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}வது/,
+	    ordinalParse: /\d{1,2}வது/,
 	    ordinal : function (number) {
 	        return number + 'வது';
 	    },
@@ -33107,9 +32274,9 @@
 	})));
 
 
-/***/ }),
-/* 401 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 396 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Telugu [te]
@@ -33160,7 +32327,7 @@
 	        y : 'ఒక సంవత్సరం',
 	        yy : '%d సంవత్సరాలు'
 	    },
-	    dayOfMonthOrdinalParse : /\d{1,2}వ/,
+	    ordinalParse : /\d{1,2}వ/,
 	    ordinal : '%dవ',
 	    meridiemParse: /రాత్రి|ఉదయం|మధ్యాహ్నం|సాయంత్రం/,
 	    meridiemHour : function (hour, meridiem) {
@@ -33201,9 +32368,9 @@
 	})));
 
 
-/***/ }),
-/* 402 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 397 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Tetun Dili (East Timor) [tet]
@@ -33254,7 +32421,7 @@
 	        y : 'tinan ida',
 	        yy : 'tinan %d'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(st|nd|rd|th)/,
+	    ordinalParse: /\d{1,2}(st|nd|rd|th)/,
 	    ordinal : function (number) {
 	        var b = number % 10,
 	            output = (~~(number % 100 / 10) === 1) ? 'th' :
@@ -33274,9 +32441,9 @@
 	})));
 
 
-/***/ }),
-/* 403 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 398 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Thai [th]
@@ -33300,7 +32467,7 @@
 	    longDateFormat : {
 	        LT : 'H:mm',
 	        LTS : 'H:mm:ss',
-	        L : 'DD/MM/YYYY',
+	        L : 'YYYY/MM/DD',
 	        LL : 'D MMMM YYYY',
 	        LLL : 'D MMMM YYYY เวลา H:mm',
 	        LLLL : 'วันddddที่ D MMMM YYYY เวลา H:mm'
@@ -33346,9 +32513,9 @@
 	})));
 
 
-/***/ }),
-/* 404 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 399 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Tagalog (Philippines) [tl-ph]
@@ -33398,7 +32565,7 @@
 	        y : 'isang taon',
 	        yy : '%d taon'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}/,
+	    ordinalParse: /\d{1,2}/,
 	    ordinal : function (number) {
 	        return number;
 	    },
@@ -33413,9 +32580,9 @@
 	})));
 
 
-/***/ }),
-/* 405 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 400 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Klingon [tlh]
@@ -33525,7 +32692,7 @@
 	        y : 'wa’ DIS',
 	        yy : translate
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -33538,9 +32705,9 @@
 	})));
 
 
-/***/ }),
-/* 406 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 401 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Turkish [tr]
@@ -33612,7 +32779,7 @@
 	        y : 'bir yıl',
 	        yy : '%d yıl'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}'(inci|nci|üncü|ncı|uncu|ıncı)/,
+	    ordinalParse: /\d{1,2}'(inci|nci|üncü|ncı|uncu|ıncı)/,
 	    ordinal : function (number) {
 	        if (number === 0) {  // special case for zero
 	            return number + '\'ıncı';
@@ -33633,9 +32800,9 @@
 	})));
 
 
-/***/ }),
-/* 407 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 402 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Talossan [tzl]
@@ -33699,7 +32866,7 @@
 	        y : processRelativeTime,
 	        yy : processRelativeTime
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}\./,
+	    ordinalParse: /\d{1,2}\./,
 	    ordinal : '%d.',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -33729,9 +32896,9 @@
 	})));
 
 
-/***/ }),
-/* 408 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 403 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Central Atlas Tamazight [tzm]
@@ -33792,9 +32959,9 @@
 	})));
 
 
-/***/ }),
-/* 409 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 404 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Central Atlas Tamazight Latin [tzm-latn]
@@ -33855,9 +33022,9 @@
 	})));
 
 
-/***/ }),
-/* 410 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 405 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Ukrainian [uk]
@@ -33898,13 +33065,8 @@
 	        'nominative': 'неділя_понеділок_вівторок_середа_четвер_п’ятниця_субота'.split('_'),
 	        'accusative': 'неділю_понеділок_вівторок_середу_четвер_п’ятницю_суботу'.split('_'),
 	        'genitive': 'неділі_понеділка_вівторка_середи_четверга_п’ятниці_суботи'.split('_')
-	    };
-	
-	    if (!m) {
-	        return weekdays['nominative'];
-	    }
-	
-	    var nounCase = (/(\[[ВвУу]\]) ?dddd/).test(format) ?
+	    },
+	    nounCase = (/(\[[ВвУу]\]) ?dddd/).test(format) ?
 	        'accusative' :
 	        ((/\[?(?:минулої|наступної)? ?\] ?dddd/).test(format) ?
 	            'genitive' :
@@ -33985,7 +33147,7 @@
 	            return 'вечора';
 	        }
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}-(й|го)/,
+	    ordinalParse: /\d{1,2}-(й|го)/,
 	    ordinal: function (number, period) {
 	        switch (period) {
 	            case 'M':
@@ -34011,113 +33173,9 @@
 	})));
 
 
-/***/ }),
-/* 411 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	//! moment.js locale configuration
-	//! locale : Urdu [ur]
-	//! author : Sawood Alam : https://github.com/ibnesayeed
-	//! author : Zack : https://github.com/ZackVision
-	
-	;(function (global, factory) {
-	    true ? factory(__webpack_require__(302)) :
-	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
-	   factory(global.moment)
-	}(this, (function (moment) { 'use strict';
-	
-	
-	var months = [
-	    'جنوری',
-	    'فروری',
-	    'مارچ',
-	    'اپریل',
-	    'مئی',
-	    'جون',
-	    'جولائی',
-	    'اگست',
-	    'ستمبر',
-	    'اکتوبر',
-	    'نومبر',
-	    'دسمبر'
-	];
-	var days = [
-	    'اتوار',
-	    'پیر',
-	    'منگل',
-	    'بدھ',
-	    'جمعرات',
-	    'جمعہ',
-	    'ہفتہ'
-	];
-	
-	var ur = moment.defineLocale('ur', {
-	    months : months,
-	    monthsShort : months,
-	    weekdays : days,
-	    weekdaysShort : days,
-	    weekdaysMin : days,
-	    longDateFormat : {
-	        LT : 'HH:mm',
-	        LTS : 'HH:mm:ss',
-	        L : 'DD/MM/YYYY',
-	        LL : 'D MMMM YYYY',
-	        LLL : 'D MMMM YYYY HH:mm',
-	        LLLL : 'dddd، D MMMM YYYY HH:mm'
-	    },
-	    meridiemParse: /صبح|شام/,
-	    isPM : function (input) {
-	        return 'شام' === input;
-	    },
-	    meridiem : function (hour, minute, isLower) {
-	        if (hour < 12) {
-	            return 'صبح';
-	        }
-	        return 'شام';
-	    },
-	    calendar : {
-	        sameDay : '[آج بوقت] LT',
-	        nextDay : '[کل بوقت] LT',
-	        nextWeek : 'dddd [بوقت] LT',
-	        lastDay : '[گذشتہ روز بوقت] LT',
-	        lastWeek : '[گذشتہ] dddd [بوقت] LT',
-	        sameElse : 'L'
-	    },
-	    relativeTime : {
-	        future : '%s بعد',
-	        past : '%s قبل',
-	        s : 'چند سیکنڈ',
-	        m : 'ایک منٹ',
-	        mm : '%d منٹ',
-	        h : 'ایک گھنٹہ',
-	        hh : '%d گھنٹے',
-	        d : 'ایک دن',
-	        dd : '%d دن',
-	        M : 'ایک ماہ',
-	        MM : '%d ماہ',
-	        y : 'ایک سال',
-	        yy : '%d سال'
-	    },
-	    preparse: function (string) {
-	        return string.replace(/،/g, ',');
-	    },
-	    postformat: function (string) {
-	        return string.replace(/,/g, '،');
-	    },
-	    week : {
-	        dow : 1, // Monday is the first day of the week.
-	        doy : 4  // The week that contains Jan 4th is the first week of the year.
-	    }
-	});
-	
-	return ur;
-	
-	})));
-
-
-/***/ }),
-/* 412 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 406 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Uzbek [uz]
@@ -34178,72 +33236,9 @@
 	})));
 
 
-/***/ }),
-/* 413 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	//! moment.js locale configuration
-	//! locale : Uzbek Latin [uz-latn]
-	//! author : Rasulbek Mirzayev : github.com/Rasulbeeek
-	
-	;(function (global, factory) {
-	    true ? factory(__webpack_require__(302)) :
-	   typeof define === 'function' && define.amd ? define(['../moment'], factory) :
-	   factory(global.moment)
-	}(this, (function (moment) { 'use strict';
-	
-	
-	var uzLatn = moment.defineLocale('uz-latn', {
-	    months : 'Yanvar_Fevral_Mart_Aprel_May_Iyun_Iyul_Avgust_Sentabr_Oktabr_Noyabr_Dekabr'.split('_'),
-	    monthsShort : 'Yan_Fev_Mar_Apr_May_Iyun_Iyul_Avg_Sen_Okt_Noy_Dek'.split('_'),
-	    weekdays : 'Yakshanba_Dushanba_Seshanba_Chorshanba_Payshanba_Juma_Shanba'.split('_'),
-	    weekdaysShort : 'Yak_Dush_Sesh_Chor_Pay_Jum_Shan'.split('_'),
-	    weekdaysMin : 'Ya_Du_Se_Cho_Pa_Ju_Sha'.split('_'),
-	    longDateFormat : {
-	        LT : 'HH:mm',
-	        LTS : 'HH:mm:ss',
-	        L : 'DD/MM/YYYY',
-	        LL : 'D MMMM YYYY',
-	        LLL : 'D MMMM YYYY HH:mm',
-	        LLLL : 'D MMMM YYYY, dddd HH:mm'
-	    },
-	    calendar : {
-	        sameDay : '[Bugun soat] LT [da]',
-	        nextDay : '[Ertaga] LT [da]',
-	        nextWeek : 'dddd [kuni soat] LT [da]',
-	        lastDay : '[Kecha soat] LT [da]',
-	        lastWeek : '[O\'tgan] dddd [kuni soat] LT [da]',
-	        sameElse : 'L'
-	    },
-	    relativeTime : {
-	        future : 'Yaqin %s ichida',
-	        past : 'Bir necha %s oldin',
-	        s : 'soniya',
-	        m : 'bir daqiqa',
-	        mm : '%d daqiqa',
-	        h : 'bir soat',
-	        hh : '%d soat',
-	        d : 'bir kun',
-	        dd : '%d kun',
-	        M : 'bir oy',
-	        MM : '%d oy',
-	        y : 'bir yil',
-	        yy : '%d yil'
-	    },
-	    week : {
-	        dow : 1, // Monday is the first day of the week.
-	        doy : 7  // The week that contains Jan 1st is the first week of the year.
-	    }
-	});
-	
-	return uzLatn;
-	
-	})));
-
-
-/***/ }),
-/* 414 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 407 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Vietnamese [vi]
@@ -34310,7 +33305,7 @@
 	        y : 'một năm',
 	        yy : '%d năm'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}/,
+	    ordinalParse: /\d{1,2}/,
 	    ordinal : function (number) {
 	        return number;
 	    },
@@ -34325,9 +33320,9 @@
 	})));
 
 
-/***/ }),
-/* 415 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 408 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Pseudo [x-pseudo]
@@ -34378,7 +33373,7 @@
 	        y : 'á ~ýéár',
 	        yy : '%d ý~éárs'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(th|st|nd|rd)/,
+	    ordinalParse: /\d{1,2}(th|st|nd|rd)/,
 	    ordinal : function (number) {
 	        var b = number % 10,
 	            output = (~~(number % 100 / 10) === 1) ? 'th' :
@@ -34398,9 +33393,9 @@
 	})));
 
 
-/***/ }),
-/* 416 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 409 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Yoruba Nigeria [yo]
@@ -34450,7 +33445,7 @@
 	        y : 'ọdún kan',
 	        yy : 'ọdún %d'
 	    },
-	    dayOfMonthOrdinalParse : /ọjọ́\s\d{1,2}/,
+	    ordinalParse : /ọjọ́\s\d{1,2}/,
 	    ordinal : 'ọjọ́ %d',
 	    week : {
 	        dow : 1, // Monday is the first day of the week.
@@ -34463,9 +33458,9 @@
 	})));
 
 
-/***/ }),
-/* 417 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 410 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Chinese (China) [zh-cn]
@@ -34486,16 +33481,16 @@
 	    weekdaysShort : '周日_周一_周二_周三_周四_周五_周六'.split('_'),
 	    weekdaysMin : '日_一_二_三_四_五_六'.split('_'),
 	    longDateFormat : {
-	        LT : 'HH:mm',
-	        LTS : 'HH:mm:ss',
-	        L : 'YYYY年MMMD日',
+	        LT : 'Ah点mm分',
+	        LTS : 'Ah点m分s秒',
+	        L : 'YYYY-MM-DD',
 	        LL : 'YYYY年MMMD日',
 	        LLL : 'YYYY年MMMD日Ah点mm分',
 	        LLLL : 'YYYY年MMMD日ddddAh点mm分',
-	        l : 'YYYY年MMMD日',
+	        l : 'YYYY-MM-DD',
 	        ll : 'YYYY年MMMD日',
-	        lll : 'YYYY年MMMD日 HH:mm',
-	        llll : 'YYYY年MMMD日dddd HH:mm'
+	        lll : 'YYYY年MMMD日Ah点mm分',
+	        llll : 'YYYY年MMMD日ddddAh点mm分'
 	    },
 	    meridiemParse: /凌晨|早上|上午|中午|下午|晚上/,
 	    meridiemHour: function (hour, meridiem) {
@@ -34529,14 +33524,30 @@
 	        }
 	    },
 	    calendar : {
-	        sameDay : '[今天]LT',
-	        nextDay : '[明天]LT',
-	        nextWeek : '[下]ddddLT',
-	        lastDay : '[昨天]LT',
-	        lastWeek : '[上]ddddLT',
-	        sameElse : 'L'
+	        sameDay : function () {
+	            return this.minutes() === 0 ? '[今天]Ah[点整]' : '[今天]LT';
+	        },
+	        nextDay : function () {
+	            return this.minutes() === 0 ? '[明天]Ah[点整]' : '[明天]LT';
+	        },
+	        lastDay : function () {
+	            return this.minutes() === 0 ? '[昨天]Ah[点整]' : '[昨天]LT';
+	        },
+	        nextWeek : function () {
+	            var startOfWeek, prefix;
+	            startOfWeek = moment().startOf('week');
+	            prefix = this.diff(startOfWeek, 'days') >= 7 ? '[下]' : '[本]';
+	            return this.minutes() === 0 ? prefix + 'dddAh点整' : prefix + 'dddAh点mm';
+	        },
+	        lastWeek : function () {
+	            var startOfWeek, prefix;
+	            startOfWeek = moment().startOf('week');
+	            prefix = this.unix() < startOfWeek.unix()  ? '[上]' : '[本]';
+	            return this.minutes() === 0 ? prefix + 'dddAh点整' : prefix + 'dddAh点mm';
+	        },
+	        sameElse : 'LL'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(日|月|周)/,
+	    ordinalParse: /\d{1,2}(日|月|周)/,
 	    ordinal : function (number, period) {
 	        switch (period) {
 	            case 'd':
@@ -34579,9 +33590,9 @@
 	})));
 
 
-/***/ }),
-/* 418 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 411 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Chinese (Hong Kong) [zh-hk]
@@ -34603,16 +33614,16 @@
 	    weekdaysShort : '週日_週一_週二_週三_週四_週五_週六'.split('_'),
 	    weekdaysMin : '日_一_二_三_四_五_六'.split('_'),
 	    longDateFormat : {
-	        LT : 'HH:mm',
-	        LTS : 'HH:mm:ss',
+	        LT : 'Ah點mm分',
+	        LTS : 'Ah點m分s秒',
 	        L : 'YYYY年MMMD日',
 	        LL : 'YYYY年MMMD日',
-	        LLL : 'YYYY年MMMD日 HH:mm',
-	        LLLL : 'YYYY年MMMD日dddd HH:mm',
+	        LLL : 'YYYY年MMMD日Ah點mm分',
+	        LLLL : 'YYYY年MMMD日ddddAh點mm分',
 	        l : 'YYYY年MMMD日',
 	        ll : 'YYYY年MMMD日',
-	        lll : 'YYYY年MMMD日 HH:mm',
-	        llll : 'YYYY年MMMD日dddd HH:mm'
+	        lll : 'YYYY年MMMD日Ah點mm分',
+	        llll : 'YYYY年MMMD日ddddAh點mm分'
 	    },
 	    meridiemParse: /凌晨|早上|上午|中午|下午|晚上/,
 	    meridiemHour : function (hour, meridiem) {
@@ -34651,7 +33662,7 @@
 	        lastWeek : '[上]ddddLT',
 	        sameElse : 'L'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(日|月|週)/,
+	    ordinalParse: /\d{1,2}(日|月|週)/,
 	    ordinal : function (number, period) {
 	        switch (period) {
 	            case 'd' :
@@ -34689,9 +33700,9 @@
 	})));
 
 
-/***/ }),
-/* 419 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 412 */
+/***/ function(module, exports, __webpack_require__) {
 
 	//! moment.js locale configuration
 	//! locale : Chinese (Taiwan) [zh-tw]
@@ -34712,16 +33723,16 @@
 	    weekdaysShort : '週日_週一_週二_週三_週四_週五_週六'.split('_'),
 	    weekdaysMin : '日_一_二_三_四_五_六'.split('_'),
 	    longDateFormat : {
-	        LT : 'HH:mm',
-	        LTS : 'HH:mm:ss',
+	        LT : 'Ah點mm分',
+	        LTS : 'Ah點m分s秒',
 	        L : 'YYYY年MMMD日',
 	        LL : 'YYYY年MMMD日',
-	        LLL : 'YYYY年MMMD日 HH:mm',
-	        LLLL : 'YYYY年MMMD日dddd HH:mm',
+	        LLL : 'YYYY年MMMD日Ah點mm分',
+	        LLLL : 'YYYY年MMMD日ddddAh點mm分',
 	        l : 'YYYY年MMMD日',
 	        ll : 'YYYY年MMMD日',
-	        lll : 'YYYY年MMMD日 HH:mm',
-	        llll : 'YYYY年MMMD日dddd HH:mm'
+	        lll : 'YYYY年MMMD日Ah點mm分',
+	        llll : 'YYYY年MMMD日ddddAh點mm分'
 	    },
 	    meridiemParse: /凌晨|早上|上午|中午|下午|晚上/,
 	    meridiemHour : function (hour, meridiem) {
@@ -34760,7 +33771,7 @@
 	        lastWeek : '[上]ddddLT',
 	        sameElse : 'L'
 	    },
-	    dayOfMonthOrdinalParse: /\d{1,2}(日|月|週)/,
+	    ordinalParse: /\d{1,2}(日|月|週)/,
 	    ordinal : function (number, period) {
 	        switch (period) {
 	            case 'd' :
@@ -34798,17 +33809,17 @@
 	})));
 
 
-/***/ }),
-/* 420 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 413 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
-	var Cookies = __webpack_require__(421);
-	var getLanguage = __webpack_require__(422).getLanguage;
-	var State = __webpack_require__(423).State;
+	var Cookies = __webpack_require__(414);
+	var getLanguage = __webpack_require__(415).getLanguage;
+	var State = __webpack_require__(416).State;
 	
 	var ChampionSocket = function () {
 	    'use strict';
@@ -35014,9 +34025,9 @@
 	
 	module.exports = ChampionSocket;
 
-/***/ }),
-/* 421 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 414 */
+/***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;'use strict';
 	
@@ -35166,13 +34177,13 @@
 		return init(function () {});
 	});
 
-/***/ }),
-/* 422 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 415 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var Cookies = __webpack_require__(421);
+	var Cookies = __webpack_require__(414);
 	
 	var Language = function () {
 	    var all_languages = function all_languages() {
@@ -35231,15 +34242,15 @@
 	    URLForLanguage: Language.url_for_language
 	};
 
-/***/ }),
-/* 423 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 416 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var getPropertyValue = __webpack_require__(424).getPropertyValue;
-	var isEmptyObject = __webpack_require__(424).isEmptyObject;
-	var Cookies = __webpack_require__(421);
+	var getPropertyValue = __webpack_require__(417).getPropertyValue;
+	var isEmptyObject = __webpack_require__(417).isEmptyObject;
+	var Cookies = __webpack_require__(414);
 	
 	var isStorageSupported = function isStorageSupported(storage) {
 	    if (typeof storage === 'undefined') {
@@ -35417,13 +34428,13 @@
 	    LocalStore: LocalStore
 	};
 
-/***/ }),
-/* 424 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 417 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	__webpack_require__(425);
+	__webpack_require__(418);
 	
 	function showLoadingImage(container) {
 	    var theme = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'dark';
@@ -35600,9 +34611,9 @@
 	    compareBigUnsignedInt: compareBigUnsignedInt
 	};
 
-/***/ }),
-/* 425 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 418 */
+/***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
 	 * jQuery.scrollTo
@@ -35816,13 +34827,13 @@
 	});
 
 
-/***/ }),
-/* 426 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 419 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var getLanguage = __webpack_require__(422).getLanguage;
+	var getLanguage = __webpack_require__(415).getLanguage;
 	
 	function url_for(path, params) {
 	    if (!path) {
@@ -35886,9 +34897,9 @@
 	    get_params: get_params
 	};
 
-/***/ }),
-/* 427 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 420 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -35896,11 +34907,11 @@
 	
 	var moment = __webpack_require__(302);
 	var Client = __webpack_require__(301);
-	var getLanguage = __webpack_require__(422).getLanguage;
-	var Login = __webpack_require__(428);
-	var ChampionSocket = __webpack_require__(420);
-	var State = __webpack_require__(423).State;
-	var Cookies = __webpack_require__(421);
+	var getLanguage = __webpack_require__(415).getLanguage;
+	var Login = __webpack_require__(421);
+	var ChampionSocket = __webpack_require__(413);
+	var State = __webpack_require__(416).State;
+	var Cookies = __webpack_require__(414);
 	
 	var GTM = function () {
 	    'use strict';
@@ -36004,14 +35015,14 @@
 	
 	module.exports = GTM;
 
-/***/ }),
-/* 428 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 421 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var getAppId = __webpack_require__(420).getAppId;
-	var getLanguage = __webpack_require__(422).getLanguage;
+	var getAppId = __webpack_require__(413).getAppId;
+	var getLanguage = __webpack_require__(415).getLanguage;
 	var Client = __webpack_require__(301);
 	
 	var Login = function () {
@@ -36047,21 +35058,21 @@
 	
 	module.exports = Login;
 
-/***/ }),
-/* 429 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 422 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var Client = __webpack_require__(301);
-	var formatMoney = __webpack_require__(430).formatMoney;
-	var GTM = __webpack_require__(427);
-	var ChampionSocket = __webpack_require__(420);
-	var State = __webpack_require__(423).State;
-	var url_for = __webpack_require__(426).url_for;
-	var Utility = __webpack_require__(424);
-	var isEmptyObject = __webpack_require__(424).isEmptyObject;
-	var template = __webpack_require__(424).template;
+	var formatMoney = __webpack_require__(423).formatMoney;
+	var GTM = __webpack_require__(420);
+	var ChampionSocket = __webpack_require__(413);
+	var State = __webpack_require__(416).State;
+	var url_for = __webpack_require__(419).url_for;
+	var Utility = __webpack_require__(417);
+	var isEmptyObject = __webpack_require__(417).isEmptyObject;
+	var template = __webpack_require__(417).template;
 	
 	var Header = function () {
 	    'use strict';
@@ -36258,15 +35269,15 @@
 	
 	module.exports = Header;
 
-/***/ }),
-/* 430 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 423 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var addComma = __webpack_require__(424).addComma;
-	var getLanguage = __webpack_require__(422).getLanguage;
-	var State = __webpack_require__(423).State;
+	var addComma = __webpack_require__(417).addComma;
+	var getLanguage = __webpack_require__(415).getLanguage;
+	var State = __webpack_require__(416).State;
 	
 	function formatMoney(amount, currency) {
 	    var money = void 0;
@@ -36307,19 +35318,19 @@
 	    formatMoney: formatMoney
 	};
 
-/***/ }),
-/* 431 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 424 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var Client = __webpack_require__(301);
-	var GTM = __webpack_require__(427);
-	var getLanguage = __webpack_require__(422).getLanguage;
-	var default_redirect_url = __webpack_require__(426).default_redirect_url;
-	var url_for = __webpack_require__(426).url_for;
-	var isEmptyObject = __webpack_require__(424).isEmptyObject;
-	var Cookies = __webpack_require__(421);
+	var GTM = __webpack_require__(420);
+	var getLanguage = __webpack_require__(415).getLanguage;
+	var default_redirect_url = __webpack_require__(419).default_redirect_url;
+	var url_for = __webpack_require__(419).url_for;
+	var isEmptyObject = __webpack_require__(417).isEmptyObject;
+	var Cookies = __webpack_require__(414);
 	
 	var LoggedIn = function () {
 	    'use strict';
@@ -36330,16 +35341,18 @@
 	            redirect_url = void 0;
 	
 	        if (!loginid) {
-	            // redirected to another domain (e.g. github.io) so those cookie are not accessible here
-	            var loginids = Object.keys(tokens);
-	            var loginid_list = '';
-	            loginids.map(function (id) {
-	                loginid_list += '' + (loginid_list ? '+' : '') + id + ':' + (/^V/i.test(id) ? 'V' : 'R') + ':E'; // since there is not any data source to check, so assume all are enabled, disabled accounts will be handled on authorize
-	            });
-	            loginid = loginids[0];
-	            // set cookies
-	            Client.set_cookie('loginid', loginid);
-	            Client.set_cookie('loginid_list', loginid_list);
+	            (function () {
+	                // redirected to another domain (e.g. github.io) so those cookie are not accessible here
+	                var loginids = Object.keys(tokens);
+	                var loginid_list = '';
+	                loginids.map(function (id) {
+	                    loginid_list += '' + (loginid_list ? '+' : '') + id + ':' + (/^V/i.test(id) ? 'V' : 'R') + ':E'; // since there is not any data source to check, so assume all are enabled, disabled accounts will be handled on authorize
+	                });
+	                loginid = loginids[0];
+	                // set cookies
+	                Client.set_cookie('loginid', loginid);
+	                Client.set_cookie('loginid_list', loginid_list);
+	            })();
 	        }
 	        Client.set_cookie('token', tokens[loginid]);
 	
@@ -36400,14 +35413,14 @@
 	
 	module.exports = LoggedIn;
 
-/***/ }),
-/* 432 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 425 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var getLanguage = __webpack_require__(422).getLanguage;
-	var State = __webpack_require__(423).State;
+	var getLanguage = __webpack_require__(415).getLanguage;
+	var State = __webpack_require__(416).State;
 	
 	/**
 	 * Router module for ChampionFX
@@ -36605,16 +35618,16 @@
 	
 	module.exports = ChampionRouter;
 
-/***/ }),
-/* 433 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 426 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var moment = __webpack_require__(302);
 	var Client = __webpack_require__(301);
-	var ChampionSocket = __webpack_require__(420);
-	var template = __webpack_require__(424).template;
+	var ChampionSocket = __webpack_require__(413);
+	var template = __webpack_require__(417).template;
 	
 	var SessionDurationLimit = function () {
 	    'use strict';
@@ -36683,15 +35696,15 @@
 	
 	module.exports = SessionDurationLimit;
 
-/***/ }),
-/* 434 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 427 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	__webpack_require__(425);
+	__webpack_require__(418);
 	var Client = __webpack_require__(301);
-	var Login = __webpack_require__(428);
+	var Login = __webpack_require__(421);
 	
 	var ClientType = function () {
 	    'use strict';
@@ -36721,14 +35734,14 @@
 	
 	module.exports = ClientType;
 
-/***/ }),
-/* 435 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 428 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var getAppId = __webpack_require__(420).getAppId;
-	var getServer = __webpack_require__(420).getServer;
+	var getAppId = __webpack_require__(413).getAppId;
+	var getServer = __webpack_require__(413).getServer;
 	
 	var ChampionEndpoint = function () {
 	    'use strict';
@@ -36786,9 +35799,9 @@
 	
 	module.exports = ChampionEndpoint;
 
-/***/ }),
-/* 436 */
-/***/ (function(module, exports) {
+/***/ },
+/* 429 */
+/***/ function(module, exports) {
 
 	'use strict';
 	
@@ -36806,16 +35819,16 @@
 	
 	module.exports = MT5;
 
-/***/ }),
-/* 437 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 430 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var ChampionSocket = __webpack_require__(420);
-	var ChampionRouter = __webpack_require__(432);
-	var url_for = __webpack_require__(426).url_for;
-	var Validation = __webpack_require__(438);
+	var ChampionSocket = __webpack_require__(413);
+	var ChampionRouter = __webpack_require__(425);
+	var url_for = __webpack_require__(419).url_for;
+	var Validation = __webpack_require__(431);
 	var Client = __webpack_require__(301);
 	
 	var ChampionSignup = function () {
@@ -36893,14 +35906,14 @@
 	
 	module.exports = ChampionSignup;
 
-/***/ }),
-/* 438 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 431 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var compareBigUnsignedInt = __webpack_require__(424).compareBigUnsignedInt;
-	var template = __webpack_require__(424).template;
+	var compareBigUnsignedInt = __webpack_require__(417).compareBigUnsignedInt;
+	var template = __webpack_require__(417).template;
 	
 	var Validation = function () {
 	    'use strict';
@@ -37159,19 +36172,19 @@
 	
 	module.exports = Validation;
 
-/***/ }),
-/* 439 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 432 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var moment = __webpack_require__(302);
-	var ChampionSocket = __webpack_require__(420);
+	var ChampionSocket = __webpack_require__(413);
 	var Client = __webpack_require__(301);
-	var Utility = __webpack_require__(424);
-	var default_redirect_url = __webpack_require__(426).default_redirect_url;
-	var Validation = __webpack_require__(438);
-	var DatePicker = __webpack_require__(440).DatePicker;
+	var Utility = __webpack_require__(417);
+	var default_redirect_url = __webpack_require__(419).default_redirect_url;
+	var Validation = __webpack_require__(431);
+	var DatePicker = __webpack_require__(433).DatePicker;
 	
 	var ChampionNewRealAccount = function () {
 	    'use strict';
@@ -37324,14 +36337,14 @@
 	
 	module.exports = ChampionNewRealAccount;
 
-/***/ }),
-/* 440 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 433 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var moment = __webpack_require__(302);
-	var Utility = __webpack_require__(424);
+	var Utility = __webpack_require__(417);
 	
 	var DatePicker = function DatePicker(component_selector, select_type) {
 	    this.component_selector = component_selector;
@@ -37488,17 +36501,17 @@
 	    DatePicker: DatePicker
 	};
 
-/***/ }),
-/* 441 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 434 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var ChampionSocket = __webpack_require__(420);
+	var ChampionSocket = __webpack_require__(413);
 	var Client = __webpack_require__(301);
-	var Utility = __webpack_require__(424);
-	var default_redirect_url = __webpack_require__(426).default_redirect_url;
-	var Validation = __webpack_require__(438);
+	var Utility = __webpack_require__(417);
+	var default_redirect_url = __webpack_require__(419).default_redirect_url;
+	var Validation = __webpack_require__(431);
 	
 	var ChampionNewVirtualAccount = function () {
 	    'use strict';
@@ -37577,16 +36590,16 @@
 	
 	module.exports = ChampionNewVirtualAccount;
 
-/***/ }),
-/* 442 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 435 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var Client = __webpack_require__(301);
-	var Validation = __webpack_require__(438);
-	var ChampionSocket = __webpack_require__(420);
-	var url_for = __webpack_require__(426).url_for;
+	var Validation = __webpack_require__(431);
+	var ChampionSocket = __webpack_require__(413);
+	var url_for = __webpack_require__(419).url_for;
 	
 	var LostPassword = function () {
 	    'use strict';
@@ -37639,18 +36652,18 @@
 	
 	module.exports = LostPassword;
 
-/***/ }),
-/* 443 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 436 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var Client = __webpack_require__(301);
-	var Validation = __webpack_require__(438);
-	var ChampionSocket = __webpack_require__(420);
-	var Login = __webpack_require__(428);
-	var DatePicker = __webpack_require__(440).DatePicker;
-	var Utility = __webpack_require__(424);
+	var Validation = __webpack_require__(431);
+	var ChampionSocket = __webpack_require__(413);
+	var Login = __webpack_require__(421);
+	var DatePicker = __webpack_require__(433).DatePicker;
+	var Utility = __webpack_require__(417);
 	var moment = __webpack_require__(302);
 	
 	var ResetPassword = function () {
@@ -37751,13 +36764,13 @@
 	
 	module.exports = ResetPassword;
 
-/***/ }),
-/* 444 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 437 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var ChampionSocket = __webpack_require__(420);
+	var ChampionSocket = __webpack_require__(413);
 	var Client = __webpack_require__(301);
 	
 	var Cashier = function () {
@@ -37799,16 +36812,16 @@
 	
 	module.exports = Cashier;
 
-/***/ }),
-/* 445 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 438 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 	
-	var ChampionSocket = __webpack_require__(420);
-	var Validation = __webpack_require__(438);
+	var ChampionSocket = __webpack_require__(413);
+	var Validation = __webpack_require__(431);
 	
 	var CashierPassword = function () {
 	    'use strict';
@@ -37899,13 +36912,13 @@
 	
 	module.exports = CashierPassword;
 
-/***/ }),
-/* 446 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 439 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var ChampionSocket = __webpack_require__(420);
+	var ChampionSocket = __webpack_require__(413);
 	var Client = __webpack_require__(301);
 	
 	var CashierPaymentMethods = function () {
@@ -37936,13 +36949,13 @@
 	
 	module.exports = CashierPaymentMethods;
 
-/***/ }),
-/* 447 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 440 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var ChampionSocket = __webpack_require__(420);
+	var ChampionSocket = __webpack_require__(413);
 	var Client = __webpack_require__(301);
 	
 	var CashierTopUpVirtual = function () {
@@ -37983,13 +36996,13 @@
 	
 	module.exports = CashierTopUpVirtual;
 
-/***/ }),
-/* 448 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 441 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var ChampionSocket = __webpack_require__(420);
+	var ChampionSocket = __webpack_require__(413);
 	
 	var Authenticate = function () {
 	    'use strict';
@@ -38020,14 +37033,14 @@
 	
 	module.exports = Authenticate;
 
-/***/ }),
-/* 449 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 442 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var ChampionSocket = __webpack_require__(420);
-	var Validation = __webpack_require__(438);
+	var ChampionSocket = __webpack_require__(413);
+	var Validation = __webpack_require__(431);
 	
 	var ChangePassword = function () {
 	    'use strict';
@@ -38088,17 +37101,17 @@
 	
 	module.exports = ChangePassword;
 
-/***/ }),
-/* 450 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 443 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var MetaTraderConfig = __webpack_require__(451);
-	var MetaTraderUI = __webpack_require__(452);
+	var MetaTraderConfig = __webpack_require__(444);
+	var MetaTraderUI = __webpack_require__(445);
 	var Client = __webpack_require__(301);
-	var ChampionSocket = __webpack_require__(420);
-	var Validation = __webpack_require__(438);
+	var ChampionSocket = __webpack_require__(413);
+	var Validation = __webpack_require__(431);
 	
 	var MetaTrader = function () {
 	    'use strict';
@@ -38204,19 +37217,19 @@
 	
 	module.exports = MetaTrader;
 
-/***/ }),
-/* 451 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 444 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var Client = __webpack_require__(301);
-	var formatMoney = __webpack_require__(430).formatMoney;
-	var GTM = __webpack_require__(427);
-	var ChampionSocket = __webpack_require__(420);
-	var State = __webpack_require__(423).State;
-	var url_for = __webpack_require__(426).url_for;
-	var isEmptyObject = __webpack_require__(424).isEmptyObject;
+	var formatMoney = __webpack_require__(423).formatMoney;
+	var GTM = __webpack_require__(420);
+	var ChampionSocket = __webpack_require__(413);
+	var State = __webpack_require__(416).State;
+	var url_for = __webpack_require__(419).url_for;
+	var isEmptyObject = __webpack_require__(417).isEmptyObject;
 	
 	var MetaTraderConfig = function () {
 	    'use strict';
@@ -38434,16 +37447,16 @@
 	
 	module.exports = MetaTraderConfig;
 
-/***/ }),
-/* 452 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 445 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var MetaTraderConfig = __webpack_require__(451);
-	var formatMoney = __webpack_require__(430).formatMoney;
-	var showLoadingImage = __webpack_require__(424).showLoadingImage;
-	var Validation = __webpack_require__(438);
+	var MetaTraderConfig = __webpack_require__(444);
+	var formatMoney = __webpack_require__(423).formatMoney;
+	var showLoadingImage = __webpack_require__(417).showLoadingImage;
+	var Validation = __webpack_require__(431);
 	
 	var MetaTraderUI = function () {
 	    'use strict';
@@ -38631,19 +37644,19 @@
 	
 	module.exports = MetaTraderUI;
 
-/***/ }),
-/* 453 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 446 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var moment = __webpack_require__(302);
 	var Client = __webpack_require__(301);
-	var FormManager = __webpack_require__(454);
-	var ChampionSocket = __webpack_require__(420);
-	var dateValueChanged = __webpack_require__(424).dateValueChanged;
-	var DatePicker = __webpack_require__(440).DatePicker;
-	var TimePicker = __webpack_require__(455);
+	var FormManager = __webpack_require__(447);
+	var ChampionSocket = __webpack_require__(413);
+	var dateValueChanged = __webpack_require__(417).dateValueChanged;
+	var DatePicker = __webpack_require__(433).DatePicker;
+	var TimePicker = __webpack_require__(448);
 	
 	var SelfExclusion = function () {
 	    'use strict';
@@ -38861,16 +37874,16 @@
 	
 	module.exports = SelfExclusion;
 
-/***/ }),
-/* 454 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 447 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var ChampionSocket = __webpack_require__(420);
-	var isEmptyObject = __webpack_require__(424).isEmptyObject;
-	var showLoadingImage = __webpack_require__(424).showLoadingImage;
-	var Validation = __webpack_require__(438);
+	var ChampionSocket = __webpack_require__(413);
+	var isEmptyObject = __webpack_require__(417).isEmptyObject;
+	var showLoadingImage = __webpack_require__(417).showLoadingImage;
+	var Validation = __webpack_require__(431);
 	
 	var FormManager = function () {
 	    'use strict';
@@ -39006,14 +38019,14 @@
 	
 	module.exports = FormManager;
 
-/***/ }),
-/* 455 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 448 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var moment = __webpack_require__(302);
-	var checkInput = __webpack_require__(424).checkInput;
+	var checkInput = __webpack_require__(417).checkInput;
 	
 	var TimePicker = function TimePicker(component_selector) {
 	    this.component_selector = component_selector;
@@ -39149,9 +38162,9 @@
 	
 	module.exports = TimePicker;
 
-/***/ }),
-/* 456 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 449 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -39179,19 +38192,19 @@
 	
 	module.exports = ChampionSettings;
 
-/***/ }),
-/* 457 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 450 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var Client = __webpack_require__(301);
-	var Header = __webpack_require__(429);
-	var ChampionSocket = __webpack_require__(420);
-	var default_redirect_url = __webpack_require__(426).default_redirect_url;
-	var url_for = __webpack_require__(426).url_for;
-	var url_for_static = __webpack_require__(426).url_for_static;
-	var template = __webpack_require__(424).template;
+	var Header = __webpack_require__(422);
+	var ChampionSocket = __webpack_require__(413);
+	var default_redirect_url = __webpack_require__(419).default_redirect_url;
+	var url_for = __webpack_require__(419).url_for;
+	var url_for_static = __webpack_require__(419).url_for_static;
+	var template = __webpack_require__(417).template;
 	
 	var TNCApproval = function () {
 	    'use strict';
@@ -39240,16 +38253,16 @@
 	
 	module.exports = TNCApproval;
 
-/***/ }),
-/* 458 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 451 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var ChampionSocket = __webpack_require__(420);
-	var url_for = __webpack_require__(426).url_for;
+	var ChampionSocket = __webpack_require__(413);
+	var url_for = __webpack_require__(419).url_for;
 	var Client = __webpack_require__(301);
-	var Validation = __webpack_require__(438);
+	var Validation = __webpack_require__(431);
 	
 	var CashierDepositWithdraw = function () {
 	    'use strict';
@@ -39370,13 +38383,13 @@
 	
 	module.exports = CashierDepositWithdraw;
 
-/***/ }),
-/* 459 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 452 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var Slider = __webpack_require__(460);
+	var Slider = __webpack_require__(453);
 	
 	var Home = function () {
 	    'use strict';
@@ -39403,13 +38416,13 @@
 	
 	module.exports = Home;
 
-/***/ }),
-/* 460 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 453 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	__webpack_require__(461);
+	__webpack_require__(454);
 	
 	var Slider = function () {
 	    var init = function init() {
@@ -39476,9 +38489,9 @@
 	
 	module.exports = Slider;
 
-/***/ }),
-/* 461 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 454 */
+/***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;'use strict';
 	
@@ -42114,16 +41127,16 @@
 	    };
 	});
 
-/***/ }),
-/* 462 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 455 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var Client = __webpack_require__(301);
-	var showLoadingImage = __webpack_require__(424).showLoadingImage;
-	var FinancialAssessment = __webpack_require__(463);
-	var PersonalDetails = __webpack_require__(464);
+	var showLoadingImage = __webpack_require__(417).showLoadingImage;
+	var FinancialAssessment = __webpack_require__(456);
+	var PersonalDetails = __webpack_require__(457);
 	
 	var Profile = function () {
 	    'use strict';
@@ -42139,13 +41152,15 @@
 	            $('a[href="' + hash + '"]').click();
 	            loadContent(hash);
 	        } else {
-	            loadContent(hash);
-	            var active_tab = $('.ui-tabs-active a').attr('href');
+	            (function () {
+	                loadContent(hash);
+	                var active_tab = $('.ui-tabs-active a').attr('href');
 	
-	            $('.tabs-vertical li').on('click', function () {
-	                active_tab = $('.ui-tabs-active a').attr('href');
-	                loadContent(active_tab);
-	            });
+	                $('.tabs-vertical li').on('click', function () {
+	                    active_tab = $('.ui-tabs-active a').attr('href');
+	                    loadContent(active_tab);
+	                });
+	            })();
 	        }
 	    };
 	
@@ -42172,18 +41187,20 @@
 	
 	module.exports = Profile;
 
-/***/ }),
-/* 463 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 456 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var Header = __webpack_require__(429);
-	var ChampionSocket = __webpack_require__(420);
-	var State = __webpack_require__(423).State;
-	var isEmptyObject = __webpack_require__(424).isEmptyObject;
-	var showLoadingImage = __webpack_require__(424).showLoadingImage;
-	var Validation = __webpack_require__(438);
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
+	var Header = __webpack_require__(422);
+	var ChampionSocket = __webpack_require__(413);
+	var State = __webpack_require__(416).State;
+	var isEmptyObject = __webpack_require__(417).isEmptyObject;
+	var showLoadingImage = __webpack_require__(417).showLoadingImage;
+	var Validation = __webpack_require__(431);
 	
 	var FinancialAssessment = function () {
 	    'use strict';
@@ -42244,38 +41261,44 @@
 	        $btn_submit.attr('disabled', 'disabled');
 	
 	        if (Validation.validate(form_selector)) {
-	            var has_changed = false;
-	            Object.keys(financial_assessment).forEach(function (key) {
-	                var $key = $('#' + key);
-	                if ($key.length && $key.val() !== financial_assessment[key]) {
-	                    has_changed = true;
+	            var _ret = function () {
+	                var has_changed = false;
+	                Object.keys(financial_assessment).forEach(function (key) {
+	                    var $key = $('#' + key);
+	                    if ($key.length && $key.val() !== financial_assessment[key]) {
+	                        has_changed = true;
+	                    }
+	                });
+	                if (Object.keys(financial_assessment).length === 0) has_changed = true;
+	                if (!has_changed) {
+	                    showFormMessage('You did not change anything.', false);
+	                    setTimeout(function () {
+	                        $btn_submit.removeAttr('disabled');
+	                    }, 1000);
+	                    return {
+	                        v: void 0
+	                    };
 	                }
-	            });
-	            if (Object.keys(financial_assessment).length === 0) has_changed = true;
-	            if (!has_changed) {
-	                showFormMessage('You did not change anything.', false);
-	                setTimeout(function () {
-	                    $btn_submit.removeAttr('disabled');
-	                }, 1000);
-	                return;
-	            }
 	
-	            var data = { set_financial_assessment: 1 };
-	            showLoadingImage($msg_form);
-	            $(form_selector).find('select').each(function () {
-	                financial_assessment[$(this).attr('id')] = data[$(this).attr('id')] = $(this).val();
-	            });
-	            ChampionSocket.send(data).then(function (response) {
-	                $btn_submit.removeAttr('disabled');
-	                if ('error' in response) {
-	                    showFormMessage('Sorry, an error occurred while processing your request.', false);
-	                } else {
-	                    showFormMessage('Your changes have been updated successfully.', true);
-	                    ChampionSocket.send({ get_financial_assessment: 1 }, true).then(function () {
-	                        Header.displayAccountStatus();
-	                    });
-	                }
-	            });
+	                var data = { set_financial_assessment: 1 };
+	                showLoadingImage($msg_form);
+	                $(form_selector).find('select').each(function () {
+	                    financial_assessment[$(this).attr('id')] = data[$(this).attr('id')] = $(this).val();
+	                });
+	                ChampionSocket.send(data).then(function (response) {
+	                    $btn_submit.removeAttr('disabled');
+	                    if ('error' in response) {
+	                        showFormMessage('Sorry, an error occurred while processing your request.', false);
+	                    } else {
+	                        showFormMessage('Your changes have been updated successfully.', true);
+	                        ChampionSocket.send({ get_financial_assessment: 1 }, true).then(function () {
+	                            Header.displayAccountStatus();
+	                        });
+	                    }
+	                });
+	            }();
+	
+	            if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
 	        } else {
 	            setTimeout(function () {
 	                $btn_submit.removeAttr('disabled');
@@ -42317,17 +41340,19 @@
 	
 	module.exports = FinancialAssessment;
 
-/***/ }),
-/* 464 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 457 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
 	var Client = __webpack_require__(301);
-	var ChampionSocket = __webpack_require__(420);
-	var Validation = __webpack_require__(438);
+	var ChampionSocket = __webpack_require__(413);
+	var Validation = __webpack_require__(431);
 	var moment = __webpack_require__(302);
-	__webpack_require__(465);
+	__webpack_require__(458);
 	
 	var PersonalDetails = function () {
 	    'use strict';
@@ -42474,31 +41499,37 @@
 	        $msg.empty();
 	
 	        if (Validation.validate(form_selector)) {
-	            var req = { set_settings: 1 };
-	            Object.keys(get_settings_data).forEach(function (key) {
-	                var $frm_el = $(form_selector + ' #' + key);
-	                if (/(SELECT|INPUT)/.test($frm_el.prop('nodeName'))) {
-	                    req[key] = $frm_el.val();
-	                    if (/tax_residence/.test(key)) {
-	                        req[key] = $frm_el.val().join();
+	            var _ret = function () {
+	                var req = { set_settings: 1 };
+	                Object.keys(get_settings_data).forEach(function (key) {
+	                    var $frm_el = $(form_selector + ' #' + key);
+	                    if (/(SELECT|INPUT)/.test($frm_el.prop('nodeName'))) {
+	                        req[key] = $frm_el.val();
+	                        if (/tax_residence/.test(key)) {
+	                            req[key] = $frm_el.val().join();
+	                        }
 	                    }
-	                }
-	            });
+	                });
 	
-	            if (!isChanged(req)) {
-	                showMessage($msg, 'You did not change anything.');
-	                return;
-	            }
-	
-	            ChampionSocket.send(req).then(function (response) {
-	                var is_error = response.set_settings !== 1;
-	                showMessage($msg, is_error ? response.error.message : 'Your settings have been updated successfully.', !is_error);
-	                if (!is_error) {
-	                    ChampionSocket.send({ get_settings: 1 }, true).then(function (data) {
-	                        getSettingsResponse(data.get_settings);
-	                    });
+	                if (!isChanged(req)) {
+	                    showMessage($msg, 'You did not change anything.');
+	                    return {
+	                        v: void 0
+	                    };
 	                }
-	            });
+	
+	                ChampionSocket.send(req).then(function (response) {
+	                    var is_error = response.set_settings !== 1;
+	                    showMessage($msg, is_error ? response.error.message : 'Your settings have been updated successfully.', !is_error);
+	                    if (!is_error) {
+	                        ChampionSocket.send({ get_settings: 1 }, true).then(function (data) {
+	                            getSettingsResponse(data.get_settings);
+	                        });
+	                    }
+	                });
+	            }();
+	
+	            if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
 	        }
 	    };
 	
@@ -42518,9 +41549,9 @@
 	
 	module.exports = PersonalDetails;
 
-/***/ }),
-/* 465 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 458 */
+/***/ function(module, exports, __webpack_require__) {
 
 	var require;var require;var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
 	 * Select2 4.0.3
@@ -48249,9 +47280,9 @@
 	}));
 
 
-/***/ }),
-/* 466 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 459 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -48277,13 +47308,13 @@
 	
 	module.exports = ChampionSecurity;
 
-/***/ }),
-/* 467 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 460 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var ChampionSocket = __webpack_require__(420);
+	var ChampionSocket = __webpack_require__(413);
 	var moment = __webpack_require__(302);
 	
 	var LoginHistory = function () {
@@ -48376,14 +47407,14 @@
 	
 	module.exports = LoginHistory;
 
-/***/ }),
-/* 468 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 461 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var ChampionSocket = __webpack_require__(420);
-	var DatePicker = __webpack_require__(440).DatePicker;
+	var ChampionSocket = __webpack_require__(413);
+	var DatePicker = __webpack_require__(433).DatePicker;
 	var moment = __webpack_require__(302);
 	
 	var TradingTimes = function () {
@@ -48497,13 +47528,13 @@
 	
 	module.exports = TradingTimes;
 
-/***/ }),
-/* 469 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ },
+/* 462 */
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var ChampionSocket = __webpack_require__(420);
+	var ChampionSocket = __webpack_require__(413);
 	
 	var Limits = function () {
 	    'use strict';
@@ -48585,6 +47616,6 @@
 	
 	module.exports = Limits;
 
-/***/ })
+/***/ }
 /******/ ]);
 //# sourceMappingURL=bundle.js.map
