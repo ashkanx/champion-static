@@ -18525,7 +18525,7 @@
 	        }, Client.is_logged_in());
 	        ChampionRouter.init(container, '#champion-content');
 	        if (!Client.is_logged_in()) {
-	            $('#main-login').find('a').on('click', function () {
+	            $('.btn-login').on('click', function () {
 	                Login.redirect_to_login();
 	            });
 	        } else {
@@ -18739,7 +18739,7 @@
 	            ChampionSocket.send({ landing_company: country_code });
 	        }
 	
-	        $('#btn_logout').click(function () {
+	        $('.btn-logout').click(function () {
 	            request_logout();
 	        });
 	    };
@@ -34593,6 +34593,20 @@
 	    return typeof n === 'number' ? String(n) : n;
 	}
 	
+	function slideIn(element) {
+	    element.addClass('slide-in').removeClass('slide-out').animate({ opacity: 1 }, 100);
+	    setPosition($('body'), 'fixed');
+	}
+	
+	function slideOut(element) {
+	    element.addClass('slide-out').removeClass('slide-in');
+	    setPosition($('body'), 'relative');
+	}
+	
+	function setPosition(element, type) {
+	    element.css({ position: type });
+	}
+	
 	module.exports = {
 	    showLoadingImage: showLoadingImage,
 	    isEmptyObject: isEmptyObject,
@@ -34607,6 +34621,8 @@
 	    dateValueChanged: dateValueChanged,
 	    template: template,
 	    getPropertyValue: getPropertyValue,
+	    slideIn: slideIn,
+	    slideOut: slideOut,
 	
 	    compareBigUnsignedInt: compareBigUnsignedInt
 	};
@@ -35078,10 +35094,11 @@
 	    'use strict';
 	
 	    var hidden_class = 'invisible';
+	    var media_query = window.matchMedia('(max-width: 1199px)');
 	
 	    var init = function init() {
 	        ChampionSocket.wait('authorize').then(function () {
-	            userMenu();
+	            widthChange(media_query);
 	        });
 	        $(function () {
 	            var window_path = window.location.pathname;
@@ -35095,10 +35112,56 @@
 	                    $(this).removeClass('active');
 	                }
 	            });
+	            media_query.addListener(widthChange);
 	        });
 	    };
 	
-	    var userMenu = function userMenu() {
+	    var widthChange = function widthChange(mq) {
+	        if (mq.matches) {
+	            mobileMenu();
+	        } else {
+	            desktopMenu();
+	        }
+	        userMenu();
+	    };
+	
+	    var mobileMenu = function mobileMenu() {
+	        var $menu_dropdown = $('.nav-menu-dropdown');
+	
+	        $('#mobile-menu > ul').height($(window).innerHeight());
+	        $(window).on('orientationchange resize', function () {
+	            $('#mobile-menu > ul').height($(window).innerHeight());
+	        });
+	
+	        $('.nav-menu:not(.selected-account)').unbind('click').on('click', function (e) {
+	            e.stopPropagation();
+	            if ($('.nav-menu-dropdown.slide-in').length) {
+	                Utility.slideOut($menu_dropdown);
+	            } else {
+	                Utility.slideIn($menu_dropdown);
+	            }
+	        });
+	
+	        $(document).unbind('click').on('click', function (e) {
+	            e.stopPropagation();
+	            if ($('.nav-menu-dropdown.slide-in').length) {
+	                Utility.slideOut($menu_dropdown);
+	            }
+	        });
+	
+	        $('.nav-dropdown-toggle').off('click').on('click', function (e) {
+	            e.stopPropagation();
+	            $(this).next().toggleClass(hidden_class);
+	        });
+	
+	        if (!Client.is_logged_in()) {
+	            $('#topbar, #header').find('.logged-out').removeClass(hidden_class);
+	            return;
+	        }
+	        $('#topbar, #header').find('.logged-in').removeClass(hidden_class);
+	    };
+	
+	    var desktopMenu = function desktopMenu() {
 	        var $all_accounts = $('#all-accounts');
 	        $all_accounts.find('li.has-sub > a').off('click').on('click', function (e) {
 	            e.stopPropagation();
@@ -35106,14 +35169,10 @@
 	        });
 	
 	        if (!Client.is_logged_in()) {
-	            $('#main-login, #header .logged-out').removeClass(hidden_class);
+	            $('#topbar, #header').find('.logged-out').removeClass(hidden_class);
 	            return;
 	        }
 	
-	        if (!Client.is_virtual()) {
-	            displayAccountStatus();
-	        }
-	        $('#main-logout').removeAttr('class');
 	        $('#header .logged-in').removeClass(hidden_class);
 	        $all_accounts.find('.account > a').removeClass('menu-icon');
 	        var language = $('#select_language');
@@ -35126,6 +35185,18 @@
 	                Utility.animateAppear($all_accounts);
 	            }
 	        });
+	
+	        $(document).unbind('click').on('click', function (e) {
+	            e.stopPropagation();
+	            Utility.animateDisappear($all_accounts);
+	        });
+	    };
+	
+	    var userMenu = function userMenu() {
+	        if (!Client.is_virtual()) {
+	            displayAccountStatus();
+	        }
+	
 	        var loginid_select = '';
 	        var loginid_array = Client.get('loginid_array');
 	        for (var i = 0; i < loginid_array.length; i++) {
@@ -35133,13 +35204,15 @@
 	            if (!login.disabled) {
 	                var curr_id = login.id;
 	                var type = (login.real ? 'Real' : 'Virtual') + ' Account';
+	                var icon = login.real ? 'fx-real-icon' : 'fx-virtual-icon';
 	
 	                // default account
 	                if (curr_id === Client.get('loginid')) {
 	                    $('.account-type').html(type);
 	                    $('.account-id').html(curr_id);
+	                    loginid_select += '<div class="hidden-lg-up">\n                                        <span class="selected" href="javascript:;" value="' + curr_id + '">\n                                        <li><span class="nav-menu-icon pull-left ' + icon + '"></span>' + curr_id + '</li>\n                                        </span>\n                                       <div class="separator-line-thin-gray"></div></div>';
 	                } else {
-	                    loginid_select += '<a href="#" value="' + curr_id + '"><li>' + type + '<div>' + curr_id + '</div>\n                        </li></a><div class="separator-line-thin-gray"></div>';
+	                    loginid_select += '<a href="javascript:;" value="' + curr_id + '">\n                                        <li>\n                                            <span class="hidden-lg-up nav-menu-icon pull-left ' + icon + '"></span>\n                                            <div class="hidden-lg-down">' + type + '</div>\n                                            <div>' + curr_id + '</div>\n                                        </li>\n                                       </a>\n                                        <div class="separator-line-thin-gray"></div>';
 	                }
 	            }
 	        }
@@ -35476,7 +35549,7 @@
 	            params.container.trigger('champion:after', content);
 	        }
 	
-	        $(document).find('#header a').on('click', handleClick);
+	        $(document).find('#header a, #topbar a').on('click', handleClick);
 	        $(document).on('click', 'a', handleClick);
 	        $(window).on('popstate', handlePopstate);
 	    };
