@@ -1464,10 +1464,6 @@ button .barspinner.white {
   outline: none;
 }
 
-#header .button span, .button-secondary span {
-  padding: 7px 20px !important;
-}
-
 #payment_methods h3 {
   margin: 20px 0 0;
 }
@@ -2567,6 +2563,10 @@ button .barspinner.white {
 
   #account-info {
     text-align: right !important;
+  }
+
+  #header .button span, .button-secondary span {
+    padding: 7px 20px !important;
   }
 }
 @media (min-width: 1200px) {
