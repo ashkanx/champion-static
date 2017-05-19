@@ -37374,7 +37374,7 @@
 	
 	    var actions_info = {
 	        new_account: {
-	            title: 'Sign Up',
+	            title: 'Sign up',
 	            success_msg: function success_msg(response) {
 	                return 'Congratulations! Your [_1] Account has been created.'.replace('[_1]', types_info[Object.keys(types_info).find(function (t) {
 	                    return types_info[t].account_type === response.mt5_new_account.account_type && types_info[t].mt5_account_type === response.mt5_new_account.mt5_account_type;
@@ -37426,7 +37426,7 @@
 	            }
 	        },
 	        password_change: {
-	            title: 'Change Password',
+	            title: 'Change password',
 	            success_msg: function success_msg(response) {
 	                return 'The main password of account number [_1] has been changed.'.replace('[_1]', response.echo_req.login);
 	            },
