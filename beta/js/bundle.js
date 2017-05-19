@@ -18459,11 +18459,12 @@
 	var Client = __webpack_require__(301);
 	var GTM = __webpack_require__(420);
 	var Header = __webpack_require__(422);
-	var LoggedIn = __webpack_require__(424);
+	var LoggedIn = __webpack_require__(425);
 	var Login = __webpack_require__(421);
-	var ChampionRouter = __webpack_require__(425);
+	var ChampionRouter = __webpack_require__(424);
 	var SessionDurationLimit = __webpack_require__(426);
 	var ChampionSocket = __webpack_require__(413);
+	var State = __webpack_require__(416).State;
 	var default_redirect_url = __webpack_require__(419).default_redirect_url;
 	var url_for = __webpack_require__(419).url_for;
 	var Utility = __webpack_require__(417);
@@ -18544,6 +18545,7 @@
 	
 	    var afterContentChange = function afterContentChange(e, content) {
 	        var page = content.getAttribute('data-page');
+	        State.set('current_page', page);
 	        var pages_map = {
 	            authenticate: { module: Authenticate, is_authenticated: true, only_real: true },
 	            cashier: { module: Cashier },
@@ -18723,10 +18725,6 @@
 	        set('balance', authorize.balance);
 	        client_object.values_set = true;
 	
-	        if (authorize.is_virtual && !get('has_real')) {
-	            $('.upgrade-message').removeClass('invisible');
-	        }
-	
 	        ChampionSocket.send({ balance: 1, subscribe: 1 });
 	        ChampionSocket.send({ get_settings: 1 });
 	        ChampionSocket.send({ get_account_status: 1 });
@@ -18880,7 +18878,8 @@
 	    };
 	
 	    var getMT5AccountType = function getMT5AccountType(group) {
-	        return group ? /demo/.test(group) ? 'demo' : group.split('\\')[1] || '' : '';
+	        if (group === 'demo\\champion_virtual') group = 'demo\\champion_cent'; // TODO: remove this line (used for backward compatibility)
+	        return group ? group.replace('\\', '_') : '';
 	    };
 	
 	    return {
@@ -34894,7 +34893,7 @@
 	}
 	
 	function default_redirect_url() {
-	    return url_for('user/settings');
+	    return url_for('user/metatrader');
 	}
 	
 	function get_params() {
@@ -35083,6 +35082,7 @@
 	var Client = __webpack_require__(301);
 	var formatMoney = __webpack_require__(423).formatMoney;
 	var GTM = __webpack_require__(420);
+	var ChampionRouter = __webpack_require__(424);
 	var ChampionSocket = __webpack_require__(413);
 	var State = __webpack_require__(416).State;
 	var url_for = __webpack_require__(419).url_for;
@@ -35142,7 +35142,7 @@
 	            }
 	        });
 	
-	        $(document).unbind('click').on('click', function (e) {
+	        $(document).off('click.mobileMenu').on('click.mobileMenu', function (e) {
 	            e.stopPropagation();
 	            if ($('.nav-menu-dropdown.slide-in').length) {
 	                Utility.slideOut($menu_dropdown);
@@ -35169,9 +35169,11 @@
 	        });
 	
 	        if (!Client.is_logged_in()) {
-	            $('#topbar, #header').find('.logged-out').removeClass(hidden_class);
+	            $('#top_group').removeClass('logged-in').find('.logged-out').removeClass(hidden_class);
 	            return;
 	        }
+	        $(window).off('resize.updateBody').on('resize.updateBody', updateBody);
+	        updateBody();
 	
 	        $('#header .logged-in').removeClass(hidden_class);
 	        $all_accounts.find('.account > a').removeClass('menu-icon');
@@ -35186,10 +35188,14 @@
 	            }
 	        });
 	
-	        $(document).unbind('click').on('click', function (e) {
+	        $(document).off('click.desktopMenu').on('click.desktopMenu', function (e) {
 	            e.stopPropagation();
 	            Utility.animateDisappear($all_accounts);
 	        });
+	    };
+	
+	    var updateBody = function updateBody() {
+	        $('#champion-container').css('margin-top', $('#top_group').height());
 	    };
 	
 	    var userMenu = function userMenu() {
@@ -35198,36 +35204,53 @@
 	        }
 	
 	        var loginid_select = '';
-	        var loginid_array = Client.get('loginid_array');
-	        for (var i = 0; i < loginid_array.length; i++) {
-	            var login = loginid_array[i];
+	        var is_mt_pages = State.get('is_mt_pages');
+	        Client.get('loginid_array').forEach(function (login) {
 	            if (!login.disabled) {
 	                var curr_id = login.id;
-	                var type = (login.real ? 'Real' : 'Virtual') + ' Account';
+	                var type = '(Binary ' + (login.real ? 'Real' : 'Virtual') + ' Account)';
 	                var icon = login.real ? 'fx-real-icon' : 'fx-virtual-icon';
+	                var is_current = curr_id === Client.get('loginid');
 	
 	                // default account
-	                if (curr_id === Client.get('loginid')) {
-	                    $('.account-type').html(type);
-	                    $('.account-id').html(curr_id);
+	                if (is_current) {
+	                    $('.main-account .account-type').html(type);
+	                    $('.main-account .account-id').html(curr_id);
 	                    loginid_select += '<div class="hidden-lg-up">\n                                        <span class="selected" href="javascript:;" value="' + curr_id + '">\n                                        <li><span class="nav-menu-icon pull-left ' + icon + '"></span>' + curr_id + '</li>\n                                        </span>\n                                       <div class="separator-line-thin-gray"></div></div>';
-	                } else {
-	                    loginid_select += '<a href="javascript:;" value="' + curr_id + '">\n                                        <li>\n                                            <span class="hidden-lg-up nav-menu-icon pull-left ' + icon + '"></span>\n                                            <div class="hidden-lg-down">' + type + '</div>\n                                            <div>' + curr_id + '</div>\n                                        </li>\n                                       </a>\n                                        <div class="separator-line-thin-gray"></div>';
+	                } else if (is_mt_pages && login.real && Client.is_virtual()) {
+	                    switchLoginId(curr_id);
+	                    return;
 	                }
+	                var item_class = is_current ? 'mt-show' : '';
+	                loginid_select += '<a href="javascript:;" value="' + curr_id + '" class="' + item_class + '">\n                                        <li>\n                                            <span class="hidden-lg-up nav-menu-icon pull-left ' + icon + '"></span>\n                                            <div>' + curr_id + '</div>\n                                            <div class="hidden-lg-down account-type">' + type + '</div>\n                                        </li>\n                                   </a>\n                                   <div class="separator-line-thin-gray ' + item_class + '"></div>';
 	            }
-	        }
+	        });
 	        $('.login-id-list').html(loginid_select);
+	        $('#mobile-menu .mt-show').remove();
+	        setMetaTrader(is_mt_pages);
+	        if (!Client.has_real()) {
+	            $('#all-accounts .upgrade').removeClass(hidden_class);
+	        }
 	        $('.login-id-list a').off('click').on('click', function (e) {
 	            e.preventDefault();
 	            $(this).attr('disabled', 'disabled');
 	            switchLoginId($(this).attr('value'));
+	            if (State.get('is_mt_pages')) {
+	                State.remove('is_mt_pages');
+	                ChampionRouter.forward(url_for('user/settings'));
+	            }
 	        });
+	    };
+	
+	    var setMetaTrader = function setMetaTrader(is_mt_pages) {
+	        $('#header, #footer').find('.mt-hide')[is_mt_pages ? 'addClass' : 'removeClass'](hidden_class);
+	        $('#header, #footer').find('.mt-show')[is_mt_pages ? 'removeClass' : 'addClass'](hidden_class);
 	    };
 	
 	    var displayNotification = function displayNotification(message) {
 	        var $msg_notification = $('#msg_notification');
 	        $msg_notification.html(message);
-	        if ($msg_notification.is(':hidden')) $msg_notification.slideDown(500);
+	        if ($msg_notification.is(':hidden')) $msg_notification.slideDown(500, updateBody);
 	    };
 	
 	    var hideNotification = function hideNotification() {
@@ -35298,7 +35321,7 @@
 	    };
 	
 	    var switchLoginId = function switchLoginId(loginid) {
-	        if (!loginid || loginid.length === 0) {
+	        if (!loginid || loginid.length === 0 || loginid === Client.get('loginid')) {
 	            return;
 	        }
 	        var token = Client.get_token(loginid);
@@ -35330,7 +35353,7 @@
 	            return;
 	        }
 	        var view = formatMoney(balance, currency);
-	        $('.topMenuBalance').text(view).css('visibility', 'visible');
+	        $('.account-balance').text(view).css('visibility', 'visible');
 	    };
 	
 	    return {
@@ -35393,101 +35416,6 @@
 
 /***/ },
 /* 424 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	var Client = __webpack_require__(301);
-	var GTM = __webpack_require__(420);
-	var getLanguage = __webpack_require__(415).getLanguage;
-	var default_redirect_url = __webpack_require__(419).default_redirect_url;
-	var url_for = __webpack_require__(419).url_for;
-	var isEmptyObject = __webpack_require__(417).isEmptyObject;
-	var Cookies = __webpack_require__(414);
-	
-	var LoggedIn = function () {
-	    'use strict';
-	
-	    var load = function load() {
-	        var tokens = storeTokens();
-	        var loginid = Cookies.get('loginid'),
-	            redirect_url = void 0;
-	
-	        if (!loginid) {
-	            (function () {
-	                // redirected to another domain (e.g. github.io) so those cookie are not accessible here
-	                var loginids = Object.keys(tokens);
-	                var loginid_list = '';
-	                loginids.map(function (id) {
-	                    loginid_list += '' + (loginid_list ? '+' : '') + id + ':' + (/^V/i.test(id) ? 'V' : 'R') + ':E'; // since there is not any data source to check, so assume all are enabled, disabled accounts will be handled on authorize
-	                });
-	                loginid = loginids[0];
-	                // set cookies
-	                Client.set_cookie('loginid', loginid);
-	                Client.set_cookie('loginid_list', loginid_list);
-	            })();
-	        }
-	        Client.set_cookie('token', tokens[loginid]);
-	
-	        // set flags
-	        GTM.setLoginFlag();
-	
-	        // redirect url
-	        redirect_url = sessionStorage.getItem('redirect_url');
-	        sessionStorage.removeItem('redirect_url');
-	
-	        // redirect back
-	        var set_default = true;
-	        if (redirect_url) {
-	            var do_not_redirect = ['reset-password', 'lost-password', 'change-password', 'home'];
-	            var reg = new RegExp(do_not_redirect.join('|'), 'i');
-	            if (!reg.test(redirect_url) && url_for('') !== redirect_url) {
-	                set_default = false;
-	            }
-	        }
-	        if (set_default) {
-	            redirect_url = default_redirect_url();
-	            var lang_cookie = Cookies.get('language');
-	            var language = getLanguage();
-	            if (lang_cookie && lang_cookie !== language) {
-	                redirect_url = redirect_url.replace(new RegExp('/' + language + '/', 'i'), '/' + lang_cookie.toLowerCase() + '/');
-	            }
-	        }
-	        document.getElementById('loading_link').setAttribute('href', redirect_url);
-	        window.location.href = redirect_url;
-	    };
-	
-	    var storeTokens = function storeTokens() {
-	        // Parse hash for loginids and tokens returned by OAuth
-	        var hash = (/acct1/i.test(window.location.hash) ? window.location.hash : window.location.search).substr(1).split('&');
-	        var tokens = {};
-	        for (var i = 0; i < hash.length; i += 2) {
-	            var loginid = getHashValue(hash[i], 'acct');
-	            var token = getHashValue(hash[i + 1], 'token');
-	            if (loginid && token) {
-	                tokens[loginid] = token;
-	            }
-	        }
-	        if (!isEmptyObject(tokens)) {
-	            Client.set('tokens', JSON.stringify(tokens));
-	        }
-	        return tokens;
-	    };
-	
-	    var getHashValue = function getHashValue(source, key) {
-	        var match = new RegExp('^' + key);
-	        return source && source.length > 0 ? match.test(source.split('=')[0]) ? source.split('=')[1] : '' : '';
-	    };
-	
-	    return {
-	        load: load
-	    };
-	}();
-	
-	module.exports = LoggedIn;
-
-/***/ },
-/* 425 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -35690,6 +35618,101 @@
 	}();
 	
 	module.exports = ChampionRouter;
+
+/***/ },
+/* 425 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	var Client = __webpack_require__(301);
+	var GTM = __webpack_require__(420);
+	var getLanguage = __webpack_require__(415).getLanguage;
+	var default_redirect_url = __webpack_require__(419).default_redirect_url;
+	var url_for = __webpack_require__(419).url_for;
+	var isEmptyObject = __webpack_require__(417).isEmptyObject;
+	var Cookies = __webpack_require__(414);
+	
+	var LoggedIn = function () {
+	    'use strict';
+	
+	    var load = function load() {
+	        var tokens = storeTokens();
+	        var loginid = Cookies.get('loginid'),
+	            redirect_url = void 0;
+	
+	        if (!loginid) {
+	            (function () {
+	                // redirected to another domain (e.g. github.io) so those cookie are not accessible here
+	                var loginids = Object.keys(tokens);
+	                var loginid_list = '';
+	                loginids.map(function (id) {
+	                    loginid_list += '' + (loginid_list ? '+' : '') + id + ':' + (/^V/i.test(id) ? 'V' : 'R') + ':E'; // since there is not any data source to check, so assume all are enabled, disabled accounts will be handled on authorize
+	                });
+	                loginid = loginids[0];
+	                // set cookies
+	                Client.set_cookie('loginid', loginid);
+	                Client.set_cookie('loginid_list', loginid_list);
+	            })();
+	        }
+	        Client.set_cookie('token', tokens[loginid]);
+	
+	        // set flags
+	        GTM.setLoginFlag();
+	
+	        // redirect url
+	        redirect_url = sessionStorage.getItem('redirect_url');
+	        sessionStorage.removeItem('redirect_url');
+	
+	        // redirect back
+	        var set_default = true;
+	        if (redirect_url) {
+	            var do_not_redirect = ['reset-password', 'lost-password', 'change-password', 'home'];
+	            var reg = new RegExp(do_not_redirect.join('|'), 'i');
+	            if (!reg.test(redirect_url) && url_for('') !== redirect_url) {
+	                set_default = false;
+	            }
+	        }
+	        if (set_default) {
+	            redirect_url = default_redirect_url();
+	            var lang_cookie = Cookies.get('language');
+	            var language = getLanguage();
+	            if (lang_cookie && lang_cookie !== language) {
+	                redirect_url = redirect_url.replace(new RegExp('/' + language + '/', 'i'), '/' + lang_cookie.toLowerCase() + '/');
+	            }
+	        }
+	        document.getElementById('loading_link').setAttribute('href', redirect_url);
+	        window.location.href = redirect_url;
+	    };
+	
+	    var storeTokens = function storeTokens() {
+	        // Parse hash for loginids and tokens returned by OAuth
+	        var hash = (/acct1/i.test(window.location.hash) ? window.location.hash : window.location.search).substr(1).split('&');
+	        var tokens = {};
+	        for (var i = 0; i < hash.length; i += 2) {
+	            var loginid = getHashValue(hash[i], 'acct');
+	            var token = getHashValue(hash[i + 1], 'token');
+	            if (loginid && token) {
+	                tokens[loginid] = token;
+	            }
+	        }
+	        if (!isEmptyObject(tokens)) {
+	            Client.set('tokens', JSON.stringify(tokens));
+	        }
+	        return tokens;
+	    };
+	
+	    var getHashValue = function getHashValue(source, key) {
+	        var match = new RegExp('^' + key);
+	        return source && source.length > 0 ? match.test(source.split('=')[0]) ? source.split('=')[1] : '' : '';
+	    };
+	
+	    return {
+	        load: load
+	    };
+	}();
+	
+	module.exports = LoggedIn;
 
 /***/ },
 /* 426 */
@@ -35899,7 +35922,7 @@
 	'use strict';
 	
 	var ChampionSocket = __webpack_require__(413);
-	var ChampionRouter = __webpack_require__(425);
+	var ChampionRouter = __webpack_require__(424);
 	var url_for = __webpack_require__(419).url_for;
 	var Validation = __webpack_require__(431);
 	var Client = __webpack_require__(301);
@@ -36030,6 +36053,13 @@
 	                            $parent.append($('<div/>', { class: error_class + ' ' + hidden_class }));
 	                        }
 	                        field.$error = $parent.find('.' + error_class);
+	                        // Add indicator to required fields
+	                        if (field.validations.indexOf('req') >= 0) {
+	                            var $label = $parent.find('label');
+	                            if ($label.find('span.required').length === 0) {
+	                                $label.append($('<span/>', { class: 'required error-msg', text: '*' }));
+	                            }
+	                        }
 	                    }
 	
 	                    var event = events_map[field.type];
@@ -37184,6 +37214,7 @@
 	var MetaTraderUI = __webpack_require__(445);
 	var Client = __webpack_require__(301);
 	var ChampionSocket = __webpack_require__(413);
+	var State = __webpack_require__(416).State;
 	var Validation = __webpack_require__(431);
 	
 	var MetaTrader = function () {
@@ -37194,6 +37225,7 @@
 	    var fields = MetaTraderConfig.fields;
 	
 	    var load = function load() {
+	        State.set('is_mt_pages', 1);
 	        ChampionSocket.wait('mt5_login_list').then(function (response) {
 	            responseLoginList(response);
 	        });
@@ -37210,6 +37242,8 @@
 	            }
 	        });
 	
+	        Client.set('mt5_account', getDefaultAccount(response.mt5_login_list));
+	
 	        // Update types with no account
 	        Object.keys(types_info).forEach(function (acc_type) {
 	            if (!types_info[acc_type].account_info) {
@@ -37218,8 +37252,22 @@
 	        });
 	    };
 	
+	    var getDefaultAccount = function getDefaultAccount(login_list) {
+	        return (
+	            // remove hash from url
+	            // const url = window.location.href.split('#')[0];
+	            // window.history.replaceState({ url: url }, null, url);
+	            Object.keys(types_info).indexOf(location.hash.substring(1)) >= 0 ? location.hash.substring(1) : Client.get('mt5_account') || (login_list && login_list.length ? Client.getMT5AccountType((login_list.find(function (login) {
+	                return (/real/.test(login.group)
+	                );
+	            }) || login_list.find(function (login) {
+	                return (/demo/.test(login.group)
+	                );
+	            })).group) : 'demo_champion_cent')
+	        );
+	    };
+	
 	    var getAccountDetails = function getAccountDetails(login, acc_type) {
-	        MetaTraderUI.displayLoadingAccount(acc_type);
 	        ChampionSocket.send({
 	            mt5_get_settings: 1,
 	            login: login
@@ -37269,15 +37317,19 @@
 	                ChampionSocket.send(req).then(function (response) {
 	                    if (response.error) {
 	                        MetaTraderUI.displayFormMessage(response.error.message);
-	                        MetaTraderUI.enableButton();
 	                    } else {
-	                        MetaTraderUI.closeForm();
+	                        var login = actions_info[action].login ? actions_info[action].login(response) : types_info[acc_type].account_info.login;
+	                        if (!types_info[acc_type].account_info) {
+	                            types_info[acc_type].account_info = { login: login };
+	                        }
+	                        MetaTraderUI.loadAction(null, acc_type);
 	                        MetaTraderUI.displayMainMessage(actions_info[action].success_msg(response));
-	                        getAccountDetails(actions_info[action].login ? actions_info[action].login(response) : types_info[acc_type].account_info.login, acc_type);
+	                        getAccountDetails(login, acc_type);
 	                        if (typeof actions_info[action].onSuccess === 'function') {
 	                            actions_info[action].onSuccess(response, acc_type);
 	                        }
 	                    }
+	                    MetaTraderUI.enableButton();
 	                });
 	            });
 	        }
@@ -37308,10 +37360,12 @@
 	    'use strict';
 	
 	    var types_info = {
-	        demo: { account_type: 'demo', mt5_account_type: '', title: 'Demo', max_leverage: 1000, is_demo: true },
-	        champion_cent: { account_type: 'financial', mt5_account_type: 'cent', title: 'Real Cent', max_leverage: 1000 },
-	        champion_standard: { account_type: 'financial', mt5_account_type: 'standard', title: 'Real Standard', max_leverage: 300 },
-	        champion_stp: { account_type: 'financial', mt5_account_type: 'stp', title: 'Real STP', max_leverage: 100 }
+	        demo_champion_cent: { account_type: 'demo', mt5_account_type: 'cent', title: 'Demo Cent', order: 1, max_leverage: 1000, is_demo: true },
+	        demo_champion_standard: { account_type: 'demo', mt5_account_type: 'standard', title: 'Demo Standard', order: 3, max_leverage: 300, is_demo: true },
+	        demo_champion_stp: { account_type: 'demo', mt5_account_type: 'stp', title: 'Demo STP', order: 5, max_leverage: 100, is_demo: true },
+	        real_champion_cent: { account_type: 'financial', mt5_account_type: 'cent', title: 'Real Cent', order: 2, max_leverage: 1000 },
+	        real_champion_standard: { account_type: 'financial', mt5_account_type: 'standard', title: 'Real Standard', order: 4, max_leverage: 300 },
+	        real_champion_stp: { account_type: 'financial', mt5_account_type: 'stp', title: 'Real STP', order: 6, max_leverage: 100 }
 	    };
 	
 	    var needsRealMessage = function needsRealMessage() {
@@ -37320,9 +37374,11 @@
 	
 	    var actions_info = {
 	        new_account: {
-	            title: 'Create Account',
+	            title: 'Sign up',
 	            success_msg: function success_msg(response) {
-	                return 'Congratulations! Your [_1] Account has been created.'.replace('[_1]', types_info[response.mt5_new_account.account_type === 'financial' ? 'champion_' + response.mt5_new_account.mt5_account_type : response.mt5_new_account.account_type].title);
+	                return 'Congratulations! Your [_1] Account has been created.'.replace('[_1]', types_info[Object.keys(types_info).find(function (t) {
+	                    return types_info[t].account_type === response.mt5_new_account.account_type && types_info[t].mt5_account_type === response.mt5_new_account.mt5_account_type;
+	                })].title);
 	            },
 	            login: function login(response) {
 	                return response.mt5_new_account.login;
@@ -37353,7 +37409,7 @@
 	                });
 	            },
 	            onSuccess: function onSuccess(response, acc_type) {
-	                var type = types_info[acc_type].mt5_account_type || 'demo';
+	                var type = types_info[acc_type].account_type + '_' + types_info[acc_type].mt5_account_type;
 	                var gtm_data = {
 	                    event: 'mt5_new_account',
 	                    bom_email: Client.get('email'),
@@ -37370,7 +37426,7 @@
 	            }
 	        },
 	        password_change: {
-	            title: 'Change Password',
+	            title: 'Change password',
 	            success_msg: function success_msg(response) {
 	                return 'The main password of account number [_1] has been changed.'.replace('[_1]', response.echo_req.login);
 	            },
@@ -37527,6 +37583,7 @@
 	'use strict';
 	
 	var MetaTraderConfig = __webpack_require__(444);
+	var Client = __webpack_require__(301);
 	var formatMoney = __webpack_require__(423).formatMoney;
 	var showLoadingImage = __webpack_require__(417).showLoadingImage;
 	var Validation = __webpack_require__(431);
@@ -37535,7 +37592,10 @@
 	    'use strict';
 	
 	    var $container = void 0,
+	        $list_cont = void 0,
+	        $mt5_account = void 0,
 	        $list = void 0,
+	        $detail = void 0,
 	        $action = void 0,
 	        $templates = void 0,
 	        _$form = void 0,
@@ -37551,87 +37611,155 @@
 	    var init = function init(submit_func) {
 	        submit = submit_func;
 	        $container = $('#mt_account_management');
-	        $list = $container.find('#accounts_list');
+	        $mt5_account = $container.find('#mt5_account');
+	        $list_cont = $container.find('#accounts_list');
+	        $list = $list_cont.find('> div');
+	        $detail = $container.find('#account_detail');
 	        $action = $container.find('#fst_action');
 	        $templates = $container.find('#templates');
 	        $main_msg = $container.find('#main_msg');
-	        $container.find('#mt_loading').remove();
+	        $detail.find('[class*="act_"]').click(populateForm);
 	
 	        populateAccountList();
 	    };
 	
 	    var populateAccountList = function populateAccountList() {
-	        var $acc_box = $templates.find('> .acc-box');
-	        Object.keys(types_info).forEach(function (acc_type) {
+	        var $acc_name = $templates.find('> .acc-name');
+	        var no_real = Client.is_virtual() && !Client.has_real();
+	        $('#top_msg')[no_real ? 'removeClass' : 'addClass'](hidden_class);
+	        Object.keys(types_info).sort(function (a, b) {
+	            return types_info[a].order > types_info[b].order;
+	        }).forEach(function (acc_type, idx) {
 	            if ($list.find('#' + acc_type).length === 0) {
-	                var $acc_item = $acc_box.clone();
-	
-	                // set values
-	                $acc_item.attr('id', acc_type);
-	                $acc_item.find('.title').text(types_info[acc_type].title);
-	
-	                // exceptions for demo account
-	                if (types_info[acc_type].is_demo) {
-	                    $acc_item.find('.act_deposit, .act_withdrawal').remove();
+	                var $acc_item = $acc_name.clone();
+	                $acc_item.attr('value', acc_type);
+	                if (no_real && /real/.test(acc_type)) {
+	                    $acc_item.addClass('disabled');
 	                }
 	                $list.append($acc_item);
+	                if (idx % 2 === 1 && idx < Object.keys(types_info).length - 1) {
+	                    $list.append($('<div/>', { class: 'separator fill-bg-color' }));
+	                }
 	            }
 	        });
-	        $list.find('[class*="act_"]').click(populateForm);
-	        $action.find('.close').click(function () {
-	            closeForm(true);
+	
+	        var hideList = function hideList() {
+	            $list_cont.slideUp('fast', function () {
+	                $mt5_account.removeClass('open');
+	            });
+	        };
+	
+	        // account switch events
+	        $mt5_account.off('click').on('click', function (e) {
+	            e.stopPropagation();
+	            if ($list_cont.is(':hidden')) {
+	                $mt5_account.addClass('open');
+	                $list_cont.slideDown('fast');
+	            } else {
+	                hideList();
+	            }
+	        });
+	        $list.off('click').on('click', '.acc-name', function () {
+	            if (!$(this).hasClass('disabled')) {
+	                setAccountType($(this).attr('value'), true);
+	            }
+	        });
+	        $(document).off('click.mt5_account_list').on('click.mt5_account_list', function () {
+	            hideList();
 	        });
 	    };
 	
-	    var displayLoadingAccount = function displayLoadingAccount(acc_type) {
-	        var $acc_item = $list.find('#' + acc_type);
-	        $acc_item.find('> div > div:not(.title, .separator)').addClass(hidden_class);
-	        $acc_item.find('.loading').removeClass(hidden_class);
+	    var setAccountType = function setAccountType(acc_type, should_set_account) {
+	        if ($mt5_account.attr('value') !== acc_type) {
+	            Client.set('mt5_account', acc_type);
+	            $mt5_account.attr('value', acc_type).html(types_info[acc_type].title).removeClass('empty');
+	            $action.addClass(hidden_class);
+	            if (should_set_account) {
+	                setCurrentAccount(acc_type);
+	            }
+	        }
 	    };
 	
 	    var updateAccount = function updateAccount(acc_type) {
-	        var $acc_item = $list.find('#' + acc_type);
-	        $acc_item.find('.loading').addClass(hidden_class);
+	        updateListItem(acc_type);
+	        setCurrentAccount(acc_type);
+	    };
+	
+	    var updateListItem = function updateListItem(acc_type) {
+	        var $acc_item = $list.find('[value=' + acc_type + ']');
+	        $acc_item.find('.mt-type').text('' + types_info[acc_type].title);
+	        if (types_info[acc_type].account_info) {
+	            $acc_item.find('.mt-login').text(types_info[acc_type].account_info.login);
+	            $acc_item.find('.mt-balance').text(formatMoney(+types_info[acc_type].account_info.balance, 'USD'));
+	            $acc_item.find('.mt-new').addClass(hidden_class);
+	        } else {
+	            $acc_item.find('.mt-new').removeClass(hidden_class);
+	        }
+	    };
+	
+	    var setCurrentAccount = function setCurrentAccount(acc_type) {
+	        if (acc_type !== Client.get('mt5_account')) return;
+	
+	        $detail.find('#account_desc').html($templates.find('.account-desc .' + acc_type).clone());
+	
 	        if (types_info[acc_type].account_info) {
 	            // Update account info
-	            $acc_item.find('.acc-info div[data]').map(function () {
+	            $detail.find('.acc-info div[data]').map(function () {
 	                var key = $(this).attr('data');
 	                var info = types_info[acc_type].account_info[key];
 	                $(this).text(key === 'balance' ? formatMoney(+info, 'USD') : key === 'leverage' ? '1:' + info : info);
 	            });
-	            $acc_item.find('.has-account').removeClass(hidden_class);
+	            $detail.find('.act_deposit, .act_withdrawal')[types_info[acc_type].is_demo ? 'addClass' : 'removeClass'](hidden_class);
+	            $detail.find('.has-account').removeClass(hidden_class);
+	            $detail.find('#account_desc .more').addClass(hidden_class);
 	        } else {
-	            $acc_item.find('.no-account').removeClass(hidden_class).find('.info').html($templates.find('#' + acc_type));
+	            $detail.find('.acc-info, .acc-actions').addClass(hidden_class);
+	        }
+	        $('#mt_loading').remove();
+	        $container.removeClass(hidden_class);
 	
-	            // Display account creation form if url has a hash like: #create_champion_cent
-	            var hash = window.location.hash;
-	            if (hash && hash === '#create_' + acc_type) {
-	                $acc_item.find('.act_new_account').click();
-	                // remove hash from url
-	                var url = window.location.href.split('#')[0];
-	                window.history.replaceState({ url: url }, null, url);
-	            }
+	        setAccountType(acc_type);
+	
+	        if ($action.hasClass(hidden_class)) {
+	            loadAction(defaultAction(acc_type));
 	        }
 	    };
 	
+	    var defaultAction = function defaultAction(acc_type) {
+	        return types_info[acc_type].account_info ? types_info[acc_type].is_demo ? 'password_change' : 'deposit' : 'new_account';
+	    };
+	
+	    var loadAction = function loadAction(action, acc_type) {
+	        $detail.find('.acc-actions [class*=act_' + (action || defaultAction(acc_type)) + ']').click();
+	    };
+	
 	    var populateForm = function populateForm(e) {
-	        closeForm();
 	        var $target = $(e.target);
-	        if ($target.prop('tagName').toLowerCase() === 'img') {
+	        if ($target.prop('tagName').toLowerCase() !== 'a') {
 	            $target = $target.parents('a');
 	        }
-	        var acc_type = $target.parents('.acc-box').attr('id');
-	        var action = $target.attr('class').match(/act_(.*)/)[1];
 	
-	        // set active
-	        $list.find('.acc-box[id!="' + acc_type + '"] > div').removeClass('active');
-	        $list.find('#' + acc_type + ' > div').addClass('active');
+	        var acc_type = Client.get('mt5_account');
+	        var action = $target.attr('class').split(' ').find(function (c) {
+	            return (/^act_/.test(c)
+	            );
+	        }).replace('act_', '');
+	
+	        // set active, update title
+	        $detail.find('[class*="act_"]').removeClass('selected');
+	        $target.addClass('selected');
+	        $action.find('h4').text(actions_info[action].title);
 	
 	        actions_info[action].prerequisites(acc_type).then(function (error_msg) {
 	            if (error_msg) {
 	                // does not meet one of prerequisites
 	                displayMainMessage(error_msg);
+	                $action.find('#frm_action').empty().end().removeClass(hidden_class);
 	                return;
+	            }
+	
+	            if (!$action.find('#frm_' + action).length) {
+	                $main_msg.addClass(hidden_class);
 	            }
 	
 	            // clone form, event listener
@@ -37640,25 +37768,11 @@
 	            if (formValues) formValues(_$form, acc_type, action);
 	            _$form.find('#btn_submit').attr({ acc_type: acc_type, action: action }).on('click dblclick', submit);
 	
-	            // update title, append form
-	            $action.find('h4').text(types_info[acc_type].title + ': ' + actions_info[action].title).end().find('#frm_action').html(_$form).end().removeClass(hidden_class);
-	            $.scrollTo($action, 500, { offset: -7 });
+	            // append form
+	            $action.find('#frm_action').html(_$form).removeClass(hidden_class).end().removeClass(hidden_class);
+	            // $.scrollTo($action, 500, { offset: -7 });
 	            Validation.init('#frm_' + action, validations[action]);
 	        });
-	    };
-	
-	    var closeForm = function closeForm(should_scroll) {
-	        if (_$form && _$form.length) {
-	            _$form.find('#btn_submit').off('click dblclick', submit);
-	            _$form.empty();
-	            _$form = undefined;
-	            $action.addClass(hidden_class);
-	            $list.find('.acc-box > div').removeClass('active');
-	            if (should_scroll) {
-	                $.scrollTo($list, 500, { offset: -10 });
-	            }
-	        }
-	        $main_msg.empty().addClass(hidden_class);
 	    };
 	
 	    var postValidate = function postValidate(acc_type, action) {
@@ -37678,7 +37792,7 @@
 	
 	    var displayMainMessage = function displayMainMessage(message) {
 	        $main_msg.html(message).removeClass(hidden_class);
-	        $.scrollTo($main_msg, 500, { offset: -10 });
+	        $.scrollTo($action, 500, { offset: -80 });
 	    };
 	
 	    var disableButton = function disableButton() {
@@ -37703,9 +37817,8 @@
 	        $form: function $form() {
 	            return _$form;
 	        },
-	        displayLoadingAccount: displayLoadingAccount,
+	        loadAction: loadAction,
 	        updateAccount: updateAccount,
-	        closeForm: closeForm,
 	        postValidate: postValidate,
 	        hideFormMessage: hideFormMessage,
 	        displayFormMessage: displayFormMessage,
