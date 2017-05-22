@@ -1558,6 +1558,11 @@ button .barspinner.white {
   outline: none;
 }
 
+ul.checked.small > li {
+  background-size: 16px;
+  padding-left: 24px;
+}
+
 #payment_methods h3 {
   margin: 20px 0 0;
 }
