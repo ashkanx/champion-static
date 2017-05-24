@@ -40009,14 +40009,21 @@
 	        ClientType.load();
 	
 	        var web_url = 'https://trade.mql5.com/trade?servers=ChampionGroup-Server&trade_server=ChampionGroup-Server&demo_server=ChampionGroup-Server&startup_mode=open_demo&lang=en';
+	
+	        var sendToSignup = function sendToSignup() {
+	            $('a.mt5-web-platform').attr('href', web_url);
+	        };
+	
 	        if (Client.is_logged_in()) {
 	            ChampionSocket.wait('mt5_login_list').then(function (response) {
 	                if (response.mt5_login_list.length) {
 	                    $('a.mt5-web-platform').attr('href', web_url.replace('&startup_mode=open_demo', ''));
+	                } else {
+	                    sendToSignup();
 	                }
 	            });
 	        } else {
-	            $('a.mt5-web-platform').attr('href', web_url);
+	            sendToSignup();
 	        }
 	    };
 	
