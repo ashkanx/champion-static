@@ -18479,11 +18479,11 @@
 	var Home = __webpack_require__(435);
 	var LostPassword = __webpack_require__(438);
 	var MT5 = __webpack_require__(439);
-	var ChampionNewReal = __webpack_require__(440);
-	var ChampionNewVirtual = __webpack_require__(442);
-	var ResetPassword = __webpack_require__(443);
-	var ChampionSignup = __webpack_require__(444);
-	var TradingPlatform = __webpack_require__(445);
+	var MT5WebPlatform = __webpack_require__(440);
+	var ChampionNewReal = __webpack_require__(441);
+	var ChampionNewVirtual = __webpack_require__(443);
+	var ResetPassword = __webpack_require__(444);
+	var ChampionSignup = __webpack_require__(445);
 	var TradingTimes = __webpack_require__(446);
 	var Authenticate = __webpack_require__(447);
 	var ChangePassword = __webpack_require__(448);
@@ -18569,6 +18569,7 @@
 	            'change-password': { module: ChangePassword, is_authenticated: true },
 	            'login-history': { module: LoginHistory, is_authenticated: true },
 	            'lost-password': { module: LostPassword, not_authenticated: true },
+	            'mt5-web-platform': { module: MT5WebPlatform },
 	            'payment-methods': { module: CashierPaymentMethods },
 	            'reset-password': { module: ResetPassword, not_authenticated: true },
 	            'self-exclusion': { module: SelfExclusion, is_authenticated: true, only_real: true },
@@ -18577,7 +18578,7 @@
 	            'trading-times': { module: TradingTimes },
 	            'types-of-accounts': { module: ClientType },
 	            'trading-platform': { module: ClientType },
-	            'metatrader-5': { module: TradingPlatform },
+	            'metatrader-5': { module: ClientType },
 	            'champion-trader': { module: ClientType }
 	        };
 	        if (page in pages_map) {
@@ -39381,13 +39382,53 @@
 
 	'use strict';
 	
+	var Client = __webpack_require__(301);
+	var ChampionSocket = __webpack_require__(413);
+	
+	var MT5WebPlatform = function () {
+	    'use strict';
+	
+	    var load = function load() {
+	        $('#footer').addClass('invisible');
+	        if (Client.is_logged_in()) {
+	            ChampionSocket.wait('mt5_login_list').then(function (response) {
+	                setFrameSource(response.mt5_login_list.length > 0);
+	            });
+	        } else {
+	            setFrameSource(false);
+	        }
+	    };
+	
+	    var setFrameSource = function setFrameSource(has_mt_account) {
+	        var web_url = 'https://trade.mql5.com/trade?servers=ChampionGroup-Server&trade_server=ChampionGroup-Server&demo_server=ChampionGroup-Server&lang=en';
+	        if (!has_mt_account) {
+	            web_url += '&startup_mode=open_demo';
+	        }
+	        $(document).ready(function () {
+	            $('iframe#mt5_web_platform').attr('src', web_url).css('height', 'calc(100vh - ' + ($('#top_group').height() + 5) + 'px)');
+	        });
+	    };
+	
+	    return {
+	        load: load
+	    };
+	}();
+	
+	module.exports = MT5WebPlatform;
+
+/***/ },
+/* 441 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
 	var moment = __webpack_require__(302);
 	var ChampionSocket = __webpack_require__(413);
 	var Client = __webpack_require__(301);
 	var Utility = __webpack_require__(417);
 	var default_redirect_url = __webpack_require__(419).default_redirect_url;
 	var Validation = __webpack_require__(429);
-	var DatePicker = __webpack_require__(441).DatePicker;
+	var DatePicker = __webpack_require__(442).DatePicker;
 	
 	var ChampionNewRealAccount = function () {
 	    'use strict';
@@ -39541,7 +39582,7 @@
 	module.exports = ChampionNewRealAccount;
 
 /***/ },
-/* 441 */
+/* 442 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -39705,7 +39746,7 @@
 	};
 
 /***/ },
-/* 442 */
+/* 443 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -39794,7 +39835,7 @@
 	module.exports = ChampionNewVirtualAccount;
 
 /***/ },
-/* 443 */
+/* 444 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -39803,7 +39844,7 @@
 	var Validation = __webpack_require__(429);
 	var ChampionSocket = __webpack_require__(413);
 	var Login = __webpack_require__(421);
-	var DatePicker = __webpack_require__(441).DatePicker;
+	var DatePicker = __webpack_require__(442).DatePicker;
 	var Utility = __webpack_require__(417);
 	var moment = __webpack_require__(302);
 	
@@ -39906,7 +39947,7 @@
 	module.exports = ResetPassword;
 
 /***/ },
-/* 444 */
+/* 445 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -39993,60 +40034,13 @@
 	module.exports = ChampionSignup;
 
 /***/ },
-/* 445 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	var ClientType = __webpack_require__(433);
-	var Client = __webpack_require__(301);
-	var ChampionSocket = __webpack_require__(413);
-	
-	var TradingPlatform = function () {
-	    'use strict';
-	
-	    var load = function load() {
-	        ClientType.load();
-	
-	        var web_url = 'https://trade.mql5.com/trade?servers=ChampionGroup-Server&trade_server=ChampionGroup-Server&demo_server=ChampionGroup-Server&startup_mode=open_demo&lang=en';
-	
-	        var sendToSignup = function sendToSignup() {
-	            $('a.mt5-web-platform').attr('href', web_url);
-	        };
-	
-	        if (Client.is_logged_in()) {
-	            ChampionSocket.wait('mt5_login_list').then(function (response) {
-	                if (response.mt5_login_list.length) {
-	                    $('a.mt5-web-platform').attr('href', web_url.replace('&startup_mode=open_demo', ''));
-	                } else {
-	                    sendToSignup();
-	                }
-	            });
-	        } else {
-	            sendToSignup();
-	        }
-	    };
-	
-	    var unload = function unload() {
-	        ClientType.unload();
-	    };
-	
-	    return {
-	        load: load,
-	        unload: unload
-	    };
-	}();
-	
-	module.exports = TradingPlatform;
-
-/***/ },
 /* 446 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var ChampionSocket = __webpack_require__(413);
-	var DatePicker = __webpack_require__(441).DatePicker;
+	var DatePicker = __webpack_require__(442).DatePicker;
 	var moment = __webpack_require__(302);
 	
 	var TradingTimes = function () {
@@ -47256,7 +47250,7 @@
 	var FormManager = __webpack_require__(460);
 	var ChampionSocket = __webpack_require__(413);
 	var dateValueChanged = __webpack_require__(417).dateValueChanged;
-	var DatePicker = __webpack_require__(441).DatePicker;
+	var DatePicker = __webpack_require__(442).DatePicker;
 	var TimePicker = __webpack_require__(461);
 	
 	var SelfExclusion = function () {
