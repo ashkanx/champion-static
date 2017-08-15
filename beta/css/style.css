@@ -161,8 +161,9 @@ h1.main-title {
   display: block;
   color: #000 !important;
   text-align: center;
-  padding: 10px 0;
-  font-weight: 600;
+  padding: 15px 0;
+  font-weight: 500;
+  font-size: 16px;
 }
 #mobile-menu.nav-menu .nav-menu-dropdown a .nav-menu-icon, #mobile-menu.nav-menu .nav-menu-dropdown span .nav-menu-icon {
   display: inline-block;
@@ -392,11 +393,15 @@ h1.main-title {
 }
 #footer #footer-regulatory {
   padding: 25px 0 0;
+}
+#footer #footer-regulatory div {
   font-size: 10px;
   text-align: justify;
 }
 #footer #footer-last {
   padding: 10px 0;
+}
+#footer #footer-last div {
   font-size: 13px;
 }
 #footer #end_note {
@@ -1790,6 +1795,10 @@ iframe {
   content: url("../images/milestones/recruitment.svg");
 }
 
+html {
+  font-size: 62.5%;
+}
+
 #header {
   border: 0 !important;
 }
@@ -1802,6 +1811,7 @@ iframe {
   padding: 25px 15px;
   border-bottom: 4px solid transparent;
   color: #fff !important;
+  font-size: 16px;
 }
 #header .top-nav-menu li a.active {
   border-bottom-color: #dedede;
@@ -1818,6 +1828,10 @@ iframe {
 }
 #header .top-nav-menu ul li a.active {
   border-bottom: none;
+}
+
+#top_group li a {
+  font-size: 12px;
 }
 
 #top_group.logged-in {
@@ -2189,6 +2203,14 @@ p {
 
 .img-md {
   height: 80px;
+}
+
+.has-tabs ul li, p, span, div {
+  font-size: 16px;
+}
+
+table {
+  font-size: 16px;
 }
 
 .bankwire {
