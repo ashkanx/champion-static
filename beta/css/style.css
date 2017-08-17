@@ -1382,6 +1382,10 @@ iframe {
   }
 }
 
+.box-bordered {
+  border: 2px solid #f2f2f2;
+}
+
 .fx-advisors {
   background: url("../images/symbols/advisors.svg");
 }
@@ -1526,8 +1530,8 @@ iframe {
   background: url("../images/symbols/worldwide.svg");
 }
 
-.fx-unbeatable {
-  background: url("../images/symbols/unbeatable.svg");
+.fx-flexible-leverage {
+  background: url("../images/symbols/flexible_leverage.svg");
 }
 
 .fx-245-icon {
@@ -1873,6 +1877,39 @@ iframe {
 
 .fx-stp-account:before {
   content: url("../images/metatrader/stp.svg");
+}
+
+.fx-android:before {
+  content: url("../images/metatrader/android.svg");
+}
+
+.fx-apple:before {
+  content: url("../images/metatrader/apple.svg");
+}
+
+.fx-linux:before {
+  content: url("../images/metatrader/linux.svg");
+}
+
+.fx-windows:before {
+  content: url("../images/metatrader/windows.svg");
+}
+
+.fx-circle {
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-justify-content: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-align-items: center;
+      -ms-flex-align: center;
+          align-items: center;
+  margin: auto;
+  width: 120px;
+  height: 120px;
+  border-radius: 100%;
+  background-color: #f2f2f2;
 }
 
 #header {
