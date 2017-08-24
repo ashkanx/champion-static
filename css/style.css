@@ -507,7 +507,7 @@ h1.main-title {
 .fx-home-header {
   width: 100%;
   /* for IE 6 */
-  background: linear-gradient(transparent, transparent), url("../images/header_imgfx-2x.jpg");
+  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0)), url("../images/header_imgfx-2x.jpg");
   background-size: cover;
   padding: 40px 20px 30px;
   text-align: center;
